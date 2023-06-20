@@ -1,0 +1,22 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_apermission]    Script Date: 6/20/2023 12:42:59 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_apermission](
+	[ID] [int] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[user_id] [int] NULL,
+	[permission] [nvarchar](50) NULL,
+	[created_by] [int] NULL,
+	[created_date] [nvarchar](50) NULL
+) ON [PRIMARY]
+
+GO
+
+

@@ -1,0 +1,31 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_bus_route]    Script Date: 6/20/2023 12:47:31 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_bus_route](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[route_name] [nvarchar](50) NULL,
+	[location_from] [nvarchar](50) NULL,
+	[location_to] [nvarchar](50) NULL,
+	[driver_name] [nvarchar](50) NULL,
+	[driver_num] [nvarchar](12) NULL,
+	[bus_num] [nvarchar](12) NULL,
+	[created_by] [nvarchar](50) NULL,
+	[created_sch_id] [nvarchar](50) NULL,
+	[created_date] [nvarchar](20) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+
