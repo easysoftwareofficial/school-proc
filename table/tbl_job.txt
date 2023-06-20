@@ -1,0 +1,43 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_job]    Script Date: 6/20/2023 1:43:58 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_job](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[shift] [nvarchar](50) NULL,
+	[shift_type] [nvarchar](50) NULL,
+	[job_type] [nvarchar](50) NULL,
+	[designation] [nvarchar](50) NULL,
+	[title] [nvarchar](500) NULL,
+	[description] [nvarchar](500) NULL,
+	[responsibility] [nvarchar](500) NULL,
+	[education] [nvarchar](50) NULL,
+	[banner] [nvarchar](250) NULL,
+	[noPos] [int] NULL,
+	[experience] [nvarchar](15) NULL,
+	[is_neg] [nchar](1) NULL,
+	[salary] [nvarchar](100) NULL,
+	[start_date] [nvarchar](20) NULL,
+	[end_date] [nvarchar](20) NULL,
+	[interview_date] [nvarchar](50) NULL,
+	[job_status] [nchar](1) NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
+	[created_date] [nvarchar](50) NULL,
+	[updated_date] [nvarchar](50) NULL,
+	[is_del] [nchar](1) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+

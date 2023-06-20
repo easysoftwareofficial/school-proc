@@ -1,0 +1,39 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_teacher_attendance]    Script Date: 6/20/2023 2:25:09 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_teacher_attendance](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [nvarchar](150) NULL,
+	[user_id] [int] NULL,
+	[attend_date] [nvarchar](50) NULL,
+	[atten_nep_date] [nvarchar](50) NULL,
+	[device_code] [nvarchar](50) NULL,
+	[checkin_time] [nvarchar](50) NULL,
+	[checkout_time] [nvarchar](50) NULL,
+	[check_in_via] [nvarchar](5) NULL,
+	[check_out_via] [nvarchar](5) NULL,
+	[check_in_place] [nvarchar](5) NULL,
+	[check_out_place] [nvarchar](5) NULL,
+	[hour] [nvarchar](10) NULL,
+	[attend_verified] [nvarchar](5) NULL,
+	[verified_by] [nvarchar](50) NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
+	[created_date] [nvarchar](50) NULL,
+	[updated_date] [nvarchar](50) NULL,
+	[is_del] [nchar](1) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+

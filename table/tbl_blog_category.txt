@@ -1,7 +1,7 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_blog_category]    Script Date: 6/20/2023 12:46:30 PM ******/
+/****** Object:  Table [dbo].[tbl_blog_category]    Script Date: 6/20/2023 1:23:27 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -24,7 +24,6 @@ PRIMARY KEY CLUSTERED
 	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
-
 GO
 
 

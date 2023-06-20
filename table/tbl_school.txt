@@ -1,0 +1,63 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_school]    Script Date: 6/20/2023 2:17:06 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_school](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [varchar](20) NULL,
+	[sch_name] [varchar](100) NULL,
+	[sch_address] [varchar](100) NULL,
+	[sch_tel] [varchar](50) NULL,
+	[sch_logo] [varchar](100) NULL,
+	[sch_contact_person] [varchar](50) NULL,
+	[auth_token] [varchar](100) NULL,
+	[about_us] [varchar](2000) NULL,
+	[msg] [varchar](2000) NULL,
+	[loc_lat] [nvarchar](50) NULL,
+	[loc_long] [nvarchar](50) NULL,
+	[school_photo] [varchar](100) NULL,
+	[sch_website] [varchar](100) NULL,
+	[sch_fb] [varchar](200) NULL,
+	[sch_twitter] [varchar](200) NULL,
+	[sch_yt] [varchar](200) NULL,
+	[sch_folder] [varchar](100) NULL,
+	[sms_url] [varchar](2000) NULL,
+	[khalti_secret_key] [varchar](2000) NULL,
+	[khalti_merchant_key] [varchar](2000) NULL,
+	[result_sheet] [char](1) NULL,
+	[is_sep] [char](1) NULL,
+	[is_approved] [char](1) NULL,
+	[approved_by] [char](1) NULL,
+	[approved_date] [nvarchar](50) NULL,
+	[allow_app] [nchar](1) NULL,
+	[expiry_date] [nvarchar](50) NULL,
+	[android_pkg_name] [nvarchar](100) NULL,
+	[ios_pkg_name] [nvarchar](100) NULL,
+	[is_live] [nchar](1) NULL,
+	[is_u_pay] [nchar](1) NULL,
+	[created_date] [nvarchar](100) NULL,
+	[updated_date] [nvarchar](100) NULL,
+	[created_by] [nvarchar](50) NULL,
+	[updated_by] [nvarchar](50) NULL,
+	[del_flag] [nchar](1) NULL,
+	[sch_pwd] [nvarchar](50) NULL,
+	[esewa_merchant_key] [varchar](100) NULL,
+	[esewa_secret_key] [varchar](100) NULL,
+	[server_name] [nvarchar](50) NULL,
+	[dbname] [nvarchar](50) NULL,
+	[dbuname] [nvarchar](50) NULL,
+	[dbpwd] [nvarchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+

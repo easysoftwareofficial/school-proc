@@ -1,19 +1,25 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_appreciation]    Script Date: 6/20/2023 1:12:01 PM ******/
+/****** Object:  Table [dbo].[tbl_notification]    Script Date: 6/20/2023 2:11:31 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[tbl_appreciation](
+CREATE TABLE [dbo].[tbl_notification](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[sch_id] [nvarchar](50) NULL,
+	[class_id] [int] NULL,
+	[section_id] [int] NULL,
 	[user_id] [int] NULL,
-	[title] [nvarchar](250) NULL,
-	[description] [nvarchar](250) NULL,
+	[user_type] [nchar](1) NULL,
+	[title] [nvarchar](500) NULL,
+	[description] [nvarchar](4000) NULL,
+	[attachment] [nvarchar](50) NULL,
+	[attach_type] [nvarchar](10) NULL,
+	[not_date] [nvarchar](50) NULL,
 	[created_by] [int] NULL,
 	[updated_by] [int] NULL,
 	[created_date] [nvarchar](50) NULL,

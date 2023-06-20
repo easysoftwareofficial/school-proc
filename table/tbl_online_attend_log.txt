@@ -1,24 +1,25 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_appreciation]    Script Date: 6/20/2023 1:12:01 PM ******/
+/****** Object:  Table [dbo].[tbl_online_attend_log]    Script Date: 6/20/2023 2:12:30 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[tbl_appreciation](
+CREATE TABLE [dbo].[tbl_online_attend_log](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[sch_id] [nvarchar](50) NULL,
-	[user_id] [int] NULL,
-	[title] [nvarchar](250) NULL,
-	[description] [nvarchar](250) NULL,
+	[mem_id] [int] NULL,
+	[user_type] [nchar](1) NULL,
+	[online_class_id] [int] NULL,
+	[join_date] [nvarchar](50) NULL,
+	[join_time] [int] NULL,
 	[created_by] [int] NULL,
 	[updated_by] [int] NULL,
-	[created_date] [nvarchar](50) NULL,
-	[updated_date] [nvarchar](50) NULL,
-	[is_del] [nchar](1) NULL,
+	[created_date] [nvarchar](250) NULL,
+	[updated_date] [nvarchar](250) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC

@@ -1,27 +1,34 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_appreciation]    Script Date: 6/20/2023 1:12:01 PM ******/
+/****** Object:  Table [dbo].[tbl_leave]    Script Date: 6/20/2023 1:44:51 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[tbl_appreciation](
-	[ID] [int] IDENTITY(1,1) NOT NULL,
+CREATE TABLE [dbo].[tbl_leave](
+	[id] [int] IDENTITY(1,1) NOT NULL,
 	[sch_id] [nvarchar](50) NULL,
 	[user_id] [int] NULL,
+	[user_type] [nchar](1) NULL,
 	[title] [nvarchar](250) NULL,
 	[description] [nvarchar](250) NULL,
-	[created_by] [int] NULL,
-	[updated_by] [int] NULL,
+	[eng_date_from] [nvarchar](50) NULL,
+	[eng_date_to] [nvarchar](50) NULL,
+	[nep_date_from] [nvarchar](50) NULL,
+	[nep_date_to] [nvarchar](50) NULL,
+	[no_of_days] [int] NULL,
+	[is_approved] [nchar](1) NULL,
+	[approved_by] [int] NULL,
+	[approved_remarks] [nvarchar](250) NULL,
 	[created_date] [nvarchar](50) NULL,
 	[updated_date] [nvarchar](50) NULL,
 	[is_del] [nchar](1) NULL,
 PRIMARY KEY CLUSTERED 
 (
-	[ID] ASC
+	[id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 GO

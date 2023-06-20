@@ -1,0 +1,30 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_menu_order]    Script Date: 6/20/2023 2:08:15 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_menu_order](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[order_id] [nvarchar](50) NULL,
+	[order_date] [nvarchar](50) NULL,
+	[order_status] [nchar](1) NULL,
+	[user_id] [int] NULL,
+	[time] [nvarchar](50) NULL,
+	[menu_id] [int] NULL,
+	[qty] [int] NULL,
+	[price] [nvarchar](50) NULL,
+	[total_price] [nvarchar](50) NULL,
+	[is_paid] [nchar](1) NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
+	[is_del] [nchar](1) NULL
+) ON [PRIMARY]
+GO
+
+

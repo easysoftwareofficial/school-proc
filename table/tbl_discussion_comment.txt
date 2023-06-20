@@ -1,22 +1,21 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_attach_routine]    Script Date: 6/20/2023 1:20:14 PM ******/
+/****** Object:  Table [dbo].[tbl_discussion_comment]    Script Date: 6/20/2023 1:35:43 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[tbl_attach_routine](
+CREATE TABLE [dbo].[tbl_discussion_comment](
 	[ID] [int] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
 	[sch_id] [nvarchar](50) NULL,
 	[user_id] [int] NULL,
-	[class_id] [int] NULL,
-	[section_id] [int] NULL,
-	[term_id] [int] NULL,
-	[rout_type] [nchar](1) NULL,
-	[attach] [nvarchar](250) NULL,
+	[discussion_id] [int] NULL,
+	[comment] [nvarchar](50) NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
 	[created_date] [nvarchar](50) NULL,
 	[updated_date] [nvarchar](50) NULL,
 	[is_del] [nchar](1) NULL

@@ -1,7 +1,7 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_apermission]    Script Date: 6/20/2023 12:42:59 PM ******/
+/****** Object:  Table [dbo].[tbl_apermission]    Script Date: 6/20/2023 1:10:25 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -16,7 +16,6 @@ CREATE TABLE [dbo].[tbl_apermission](
 	[created_by] [int] NULL,
 	[created_date] [nvarchar](50) NULL
 ) ON [PRIMARY]
-
 GO
 
 

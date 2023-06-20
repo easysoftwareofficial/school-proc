@@ -1,0 +1,19 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_extra_act]    Script Date: 6/20/2023 1:40:12 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_extra_act](
+	[ID] [int] NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[extra_act] [nvarchar](50) NULL,
+	[is_del] [nchar](1) NULL
+) ON [PRIMARY]
+GO
+
+

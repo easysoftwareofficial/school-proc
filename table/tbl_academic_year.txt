@@ -1,19 +1,20 @@
 USE [EasySchoolNew]
 GO
 
-/****** Object:  Table [dbo].[tbl_appreciation]    Script Date: 6/20/2023 1:12:01 PM ******/
+/****** Object:  Table [dbo].[tbl_academic_year]    Script Date: 6/20/2023 1:00:22 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[tbl_appreciation](
+CREATE TABLE [dbo].[tbl_academic_year](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[sch_id] [nvarchar](50) NULL,
-	[user_id] [int] NULL,
-	[title] [nvarchar](250) NULL,
-	[description] [nvarchar](250) NULL,
+	[academic_year] [nvarchar](15) NULL,
+	[year_from] [nvarchar](5) NULL,
+	[year_to] [nvarchar](5) NULL,
+	[is_active] [nchar](1) NULL,
 	[created_by] [int] NULL,
 	[updated_by] [int] NULL,
 	[created_date] [nvarchar](50) NULL,

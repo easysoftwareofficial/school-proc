@@ -1,0 +1,61 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_user]    Script Date: 6/20/2023 2:29:16 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_user](
+	[user_id] [int] NULL,
+	[sch_id] [varchar](20) NULL,
+	[reg_num] [nvarchar](50) NULL,
+	[admission_date] [nvarchar](50) NULL,
+	[user_name] [nvarchar](50) NULL,
+	[password] [varbinary](255) NULL,
+	[user_type] [nvarchar](5) NULL,
+	[roll_no] [nvarchar](5) NULL,
+	[class_id] [int] NULL,
+	[section_id] [int] NULL,
+	[date_of_birth] [nvarchar](50) NULL,
+	[phone] [nvarchar](12) NULL,
+	[religion] [nvarchar](10) NULL,
+	[email] [nvarchar](50) NULL,
+	[blood_group] [nvarchar](10) NULL,
+	[house] [nvarchar](10) NULL,
+	[user_image] [nvarchar](250) NULL,
+	[full_name] [nvarchar](250) NULL,
+	[user_code] [nvarchar](50) NULL,
+	[temp_address] [nvarchar](150) NULL,
+	[perm_address] [nvarchar](150) NULL,
+	[father_name] [nvarchar](150) NULL,
+	[father_phone] [nvarchar](12) NULL,
+	[father_occupation] [nvarchar](150) NULL,
+	[mother_name] [nvarchar](150) NULL,
+	[mother_phone] [nvarchar](12) NULL,
+	[mother_occupation] [nvarchar](150) NULL,
+	[guardian_name] [nvarchar](150) NULL,
+	[guardian_phone] [nvarchar](12) NULL,
+	[guardian_occupation] [nvarchar](150) NULL,
+	[medical_history] [nvarchar](250) NULL,
+	[hostel_id] [int] NULL,
+	[transport_id] [int] NULL,
+	[failed_attempt] [int] NULL,
+	[designation_id] [int] NULL,
+	[last_logined_date] [nvarchar](15) NULL,
+	[allow_app] [nchar](1) NULL,
+	[is_blocked] [nchar](1) NULL,
+	[created_date] [nvarchar](100) NULL,
+	[updated_date] [nvarchar](100) NULL,
+	[created_by] [nvarchar](50) NULL,
+	[updated_by] [nvarchar](50) NULL,
+	[del_flag] [nchar](1) NULL,
+	[notification_token] [nvarchar](250) NULL,
+	[gender] [nvarchar](50) NULL,
+	[device_code] [int] NULL
+) ON [PRIMARY]
+GO
+
+

@@ -1,0 +1,32 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_menu]    Script Date: 6/20/2023 1:53:50 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_menu](
+	[ID] [int] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[category_id] [int] NULL,
+	[menu_type] [nchar](1) NULL,
+	[menu_image] [nvarchar](250) NULL,
+	[name] [nvarchar](250) NULL,
+	[description] [nvarchar](250) NULL,
+	[currency] [nvarchar](5) NULL,
+	[price] [nvarchar](50) NULL,
+	[price_unit] [nvarchar](5) NULL,
+	[is_avail] [nchar](1) NULL,
+	[is_active] [nchar](1) NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
+	[created_date] [nvarchar](50) NULL,
+	[updated_date] [nvarchar](50) NULL,
+	[is_del] [nchar](1) NULL
+) ON [PRIMARY]
+GO
+
+

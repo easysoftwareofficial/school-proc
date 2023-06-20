@@ -1,0 +1,32 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_mark_sheet_list]    Script Date: 6/20/2023 1:46:29 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_mark_sheet_list](
+	[sno] [int] IDENTITY(1,1) NOT NULL,
+	[sch_id] [varchar](50) NULL,
+	[class_id] [int] NULL,
+	[section_id] [int] NULL,
+	[term_id] [int] NULL,
+	[UserID] [int] NULL,
+	[mark_sheet_name] [varchar](100) NULL,
+	[mark_sheet_src] [varchar](200) NULL,
+	[created_by] [int] NULL,
+	[created_sch_id] [varchar](50) NULL,
+	[created_date] [datetime] NULL,
+	[mark_sheet_type] [varchar](5) NULL,
+	[is_allow] [char](1) NULL,
+ CONSTRAINT [PK_tbl_mark_sheet_list] PRIMARY KEY CLUSTERED 
+(
+	[sno] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
