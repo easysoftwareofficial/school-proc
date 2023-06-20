@@ -1,0 +1,296 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_assignment]    Script Date: 6/20/2023 4:09:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_assignment](
+	@schid nvarchar(50)= null,
+	@userid int = null,
+	@flag nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@memid nvarchar(250) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@sectionids xml = null,
+	@subjectid int = null,
+	@teacherid int = null,
+	@nepalidate nvarchar(50) = null,
+	@englishdate nvarchar(50) = null,
+	@deadline nvarchar(50) = null,
+	@title nvarchar(250) = null,
+	@detail nvarchar(500) = null,
+	@file nvarchar(250) = null,
+	@type nvarchar(50) = null,
+	@link nvarchar(250) = null,
+	@point nvarchar(10) = null,
+	@issubmissionreq nchar(1) = null,
+	@atype nchar(1) = null,
+	@isnotify nchar(1) = null,
+	@assignmentid int = null,
+	@imgurl nvarchar(250) = null,
+	@values XML=null,
+	@random nvarchar(250)=null,
+	@memstatus nvarchar(5) = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+
+		Insert into tbl_assignment(sch_id,class_id,section_id,subject_id,english_date,
+		nepali_date,dead_line,title,detail,link,point,is_submission_req,a_type,
+		created_by,updated_by,created_date,updated_date,is_del)values
+		(@schid,@classid,@sectionid,@subjectid,@englishdate,@nepalidate,@deadline,@title,
+		@detail,@link,@point,@issubmissionreq,@atype,@teacherid,@teacherid,
+		GETDATE(),GETDATE(),'N')
+
+		Select 200 StatusCode, 'Success' Message, notification_token NotificationToken
+		from stNamelist 
+		where classID=@classid and 
+		sectionID=any (Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionids.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) 
+		
+		return;
+	End
+
+	If(@flag='attachment')  -- insert attacment from teacher
+	Begin
+		Insert into tbl_assign_attachment(sch_id,file_name,file_type,assignment_id,created_by,updated_by,
+		created_date,updated_date,is_submit)values
+		(@schid,@file,@type,(Select IDENT_CURRENT('tbl_assignment')),@userid,@userid,GETDATE(),GETDATE(),'N')
+		return;
+	End
+
+	If(@flag='ckattachment')  -- insert ck attachment from admin
+	Begin
+		Insert into tbl_assign_attachment(sch_id,file_name,file_type,assignment_id,created_by,updated_by,
+		created_date,updated_date,is_submit)values
+		(@schid,@file,@type,@assignmentid,@memid,@userid,GETDATE(),GETDATE(),'C');
+		return;
+	End
+	
+	If(@flag='S')
+	Begin
+	
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		--select * from tbl_assignment_submit where assign_id=3 and sch_id='ES25'
+		--Select distinct count(*) from tbl_assignment_submit where assign_id=3 and sch_id='ES25' and is_del='N'
+		--(Select count(*) from tbl_user u		
+	 --   where sch_id='ES25' and del_flag='N' and user_type='S' and section_id=1 and class_id=1
+		--and user_id<> 
+		--any (Select isnull((Select distinct user_id from tbl_assignment_submit where assign_id=1 and sch_id='ES25' and is_del='N'),0)) )
+		--select * from tbl_assignment_submit;
+		Select a.is_submission_req IsSubReq,a.ID AssignmentID,nepali_date NepaliDate,FORMAT(CAST(created_date as DATE),'yyyy-MM-dd') EngDate, created_date EnglishDate,
+		dead_line DeadLine, title Title, point Points,
+		(Select count(assign_status) from tbl_assignment_submit where assign_id=a.ID and sch_id=a.sch_id and is_del='N') SubmittedCt,
+		(Select count(assign_status) from tbl_assignment_submit where assign_id=a.ID and assign_status='A' and sch_id=a.sch_id and is_del='N') ApprovedCt,
+		--(Select count(*) from tbl_user u		
+		--where sch_id=a.sch_id and is_del='N' and user_type='S' and section_id=a.section_id and class_id=a.class_id
+		--and user_id<> 
+		--any (Select isnull((Select distinct user_id from tbl_assignment_submit where assign_id=a.ID and sch_id=a.sch_id and is_del='N'),0)) )
+		10 PendingCt
+		from tbl_assignment a
+		where sch_id=@schid and 		
+		case when @teacherid='-1' then '1' else created_by end = case when @teacherid='-1' then '1' else @teacherid end
+		and class_id=@classid and subject_id=@subjectid and a.is_del='N' and
+		section_id = any(Select distinct section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionids.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data))
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+	
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_assignment where ID=@assignmentid and is_del='N' and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Assignment does not exists' Message
+			return;
+		end
+
+		Update tbl_assignment set is_del='Y', updated_by=@userid,updated_date=GETDATE()
+		where sch_id=@schid and ID=@assignmentid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	end
+
+	If(@flag='SS')
+	Begin
+	
+		If not exists(Select 'm' from tbl_assignment where ID=@assignmentid and is_del='N' and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Assignment does not exists' Message
+			return;
+		end
+
+		Select top 1 s.user_id MemID,(u.firstName+' '+u.lastName) MemName, s.point Point,
+		s.sub_date SubmittedDate,s.assign_status MemStatus
+		into #temptbl
+		from tbl_assignment_submit s
+		left join stNamelist u on u.id=s.user_id 
+		where s.sch_id=@schid and assign_id=@assignmentid and 
+		case when @memstatus='-1' then '1' else assign_status end = case when @memstatus='-1' then '1' else @memstatus end order by u.ID desc;
+
+		Select @assignmentid AssignmentID,u.user_id MemID, u.full_name FullName,isnull(t.Point,'0') Point,
+		isnull(FORMAT(CAST(t.SubmittedDate AS DATE),'yyyy-MM-dd'),'Pending') SubDate,	
+		isnull(t.SubmittedDate,'Pending') SubmittedDate,	
+		isnull(t.MemStatus,'P') MemStatusID,	
+		case isnull(t.MemStatus,'P')
+		when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Redo'
+		when 'S' then 'Submitted'
+		end  MemStatus
+		from stNamelist u
+		left join #temptbl t on u.id=t.MemID
+		where u.classID=@classid and u.appType='Student' and
+		case when @memstatus='-1' then '1' else t.MemStatus end = case when @memstatus='-1' then '1' else @memstatus end and
+		u.sectionID=any(Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionids.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) 
+
+		drop table #temptbl
+
+		--union
+		--Select u.user_id MemID,u.full_name MemName,'0' Point,'-' SubmittedDate,'N' MemStatus
+		--from tbl_user u
+		--where class_id=@classid and section_id= any(Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionids.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) 
+		--and user_type='S' and sch_id=@schid
+		return;
+	End	
+
+	If(@flag='assignattach')  -- 
+	Begin
+		--If not exists(Select 'm' from tbl_school where sch_id=@schid and del_flag='N')
+		--Begin
+		--	Select 201 StatusCode, 'School does not exists' Message
+		--	return;
+		--End
+		--If not exists(Select 'm' from tbl_assignment where ID=@assignmentid and is_del='N')
+		--Begin
+		--	Select 204 StatusCode, 'Assignment does not exists' Message
+		--	return;
+		--End
+		
+		Select @imgurl+'photo/assignment/'+file_name "File", file_type "Type"
+		from tbl_assign_attachment
+		where assignment_id=@assignmentid and sch_id=@schid and is_submit='Y'
+		return;
+	End  -- not used
+
+	If(@flag='submitattach') -- attachment submitted by student
+	Begin
+	    Select @imgurl+'photo/assignment/'+file_name "File", file_type "Type"
+		from tbl_assign_attachment,tbl_assignment_submit
+		where tbl_assign_attachment.assignment_id=tbl_assignment_submit.assign_id and assignment_id=@assignmentid and 
+		tbl_assign_attachment.sch_id=tbl_assignment_submit.sch_id and tbl_assign_attachment.sch_id=@schid
+		and tbl_assign_attachment.created_by=@memid and tbl_assign_attachment.random=tbl_assignment_submit.random and tbl_assign_attachment.random=@random
+		and is_submit='Y'  
+
+		--Select @imgurl+'photo/assignment/'+file_name "File", file_type "Type"
+		--from tbl_assign_attachment
+		--where assignment_id=@assignmentid and sch_id=@schid 
+		--and created_by=@memid and is_submit='Y';
+		return;
+	End	
+
+	If(@flag='attachck')    -- attach submitted by studnet of teacher
+	Begin
+		Select @imgurl+'photo/assignment/'+file_name "File", file_type "Type"
+		from tbl_assign_attachment
+		where assignment_id=@assignmentid and sch_id=@schid 
+		and created_by=@memid and is_submit='C';
+		return;
+	End	
+
+	If(@flag='SI')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_assignment where ID=@assignmentid and is_del='N' and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Assignment does not exists' Message
+			return;
+		end
+
+		Select a.ID AssignmentID,((select top 1 ISNULL(tbl_assignment_submit.ID,'0')
+		from tbl_assignment_submit where created_by=@memid and assign_id=@assignmentid  order by ID desc)) AssignSubmitID,a.title Title, a.detail Detail,a.subject_id SubjectID,
+		s.subject_name Subject, a.nepali_date NepaliDate, a.english_date EnglishDate,
+		ISNULL((select top 1 ISNULL(tbl_assignment_submit.assign_status,'P')
+		from tbl_assignment_submit where created_by=@memid and assign_id=@assignmentid  order by ID desc),'P') AssignStatus,
+		a.dead_line DeadLine, a.point Point, a.link Link, a.is_submission_req IsSubmissionReq
+		from tbl_assignment a
+		left join tbl_subject s on s.subject_id=a.subject_id and s.sch_id=a.sch_id
+		where a.sch_id=@schid and a.ID=@assignmentid;
+		return;
+	End
+
+	If(@flag='assignsubmit') -- assignment submittd by student
+	Begin
+		--If not exists(Select 'm' from tbl_school where sch_id=@schid and del_flag='N')
+		--Begin
+		--	Select 201 StatusCode, 'School does not exists' Message
+		--	return;
+		--End
+		--If not exists(Select 'm' from tbl_user where user_id=@memid and del_flag='N')
+		--Begin
+		--	Select 203 StatusCode, 'Student does not exists' Message
+		--	return;
+		--End
+		--If not exists(Select 'm' from tbl_assignment where ID=@assignmentid and is_del='N')
+		--Begin
+		--	Select 204 StatusCode, 'Assignment does not exists' Message
+		--	return;
+		--End		
+
+		--If not exists(Select 'm' from tbl_assignment_submit where assign_id=@assignmentid and sch_id=@schid and user_id=@memid and is_del='N')
+		--Begin
+		--	Select 205 StatusCode, 'Assignment is not submitted.' Message
+		--	return;
+		--End
+		Select  comment Comment, point Point, format(CAST(sub_date as DATE),'yyyy-MM-dd') SubDate,ISNULL(assign_status,'P') AssignStatus,random Random
+		from tbl_assignment_submit
+		where assign_id=@assignmentid and sch_id=@schid and user_id=@memid
+		and is_del='N'
+
+		--Select top 1 comment Comment, ISNULL(point,'0') Point, sub_date SubDate,assign_status AssignStatus
+		--from tbl_assignment_submit
+		--where assign_id=@assignmentid and sch_id=@schid and user_id=@memid and is_del='N' order by ID desc;
+		return;
+		
+	End
+	If(@flag='attachget')  -- attach submitted by admin
+	Begin
+		Select @imgurl+'photo/assignment/'+file_name "File", file_type "Type"
+		from tbl_assign_attachment
+		where assignment_id=@assignmentid  and sch_id=@schid and is_submit='N';
+		return;
+	End
+
+	if(@flag='ck')
+	begin	
+	
+	   update tbl_assignment_submit set point=@point,assign_status=@memstatus,updated_date=GETDATE(),updated_by=@userid
+	    where assign_id=@assignmentid and ID=@random and user_id=@memid;
+		
+	   	Select 200 StatusCode, notification_token NotificationToken
+		from stNamelist 
+		where id=@memid;
+	 return; 
+	end;
+END

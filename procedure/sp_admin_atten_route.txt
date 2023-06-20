@@ -1,0 +1,131 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_route]    Script Date: 6/20/2023 4:15:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_admin_atten_route](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(20) = null,	
+	@name nvarchar(250) = null,
+	@ssid nvarchar(250) = null,
+	@isactive nvarchar(2) = null,
+	@routeid int = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_atten_route where name=@name and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Name already exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_atten_route where ssid=@ssid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 204 StatusCode, 'SSID already exists' Message
+			return;
+		End
+
+		Insert into tbl_atten_route(sch_id,user_id,name,ssid,is_active,
+		created_by,updated_by,created_date,updated_date,is_del)
+		values
+		(@schid,@userid,@name,@ssid,'A',@userid,
+		@userid,GETDATE(),GETDATE(),'N')
+
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+	If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_atten_route where ID=@routeid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Route does not exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_atten_route where name=@name and ID<>@routeid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Name already exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_atten_route where ssid=@ssid and ID<>@routeid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 204 StatusCode, 'SSID already exists' Message
+			return;
+		End
+
+		Update tbl_atten_route set name=@name, ssid=@ssid,
+		updated_date=GETDATE(), updated_by=@userid 
+		where sch_id=@schid and ID=@routeid
+
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_atten_route where ID=@routeid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Route does not exists' Message
+			return;
+		End
+
+		Update tbl_atten_route set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+		where sch_id=@schid and ID=@routeid
+
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Select ID RouteID, name Name, ssid SSID, is_active IsActive
+		from tbl_atten_route a
+		where sch_id=@schid and is_del='N' and 
+		case when @userid='-1' then '1' else user_id end = case when @userid='-1' then '1' else @userid end
+		and case when @isactive='-1' then 'Y' else is_active end = case when @isactive='-1' then 'Y' else @isactive end
+		return;
+	End
+
+	If(@flag='AI')
+	Begin
+			If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_atten_route where ID=@routeid and is_del='N' and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Route does not exists' Message
+			return;
+		End
+
+		Update tbl_atten_route set is_active=@isactive, updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@routeid ;
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

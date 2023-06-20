@@ -1,0 +1,66 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_blog_category]    Script Date: 6/20/2023 4:50:25 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_blog_category](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@category nvarchar(250) = null,
+	@slug nvarchar(250) = null,
+	@authcode nvarchar(250) = null,
+	@isprimary int = null,
+	@flag nvarchar(10) = null,
+	@categoryid int = null
+)
+AS
+BEGIN
+	
+	If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') and @userid<>'-1'
+	Begin
+		Select 202 StatusCode, 'User does not exist' Message
+		return;
+	End
+	If(@flag='I')
+	Begin
+		Insert into tbl_blog_category(sch_id,created_by,updated_by,created_date,updated_date,
+		category_name,slug,is_primary,is_del) values
+		(@schid,@userid,@userid,GETDATE(),GETDATE(),@category,@slug,@isprimary,'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		If not exists(Select 'm' from tbl_blog_category where ID=@categoryid)
+		Begin
+			Select 203 StatusCode, 'Blog Category does not exists' Message
+			return;
+		End
+		Update tbl_blog_category set category_name=@category, slug=@slug, is_primary=@isprimary,
+		updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@categoryid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		Update tbl_blog_category set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@categoryid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		Select ID CategoryID, category_name Category, slug Slug,is_primary IsPrimary,
+		(Select count(1) from tbl_blog_post where category_id=c.ID and is_del='N') NoOfBlog
+		from tbl_blog_category c
+		where sch_id=@schid and is_del='N' and
+		case when @userid='-1' then '1' else created_by end = case when @userid='-1' then'1' else @userid end order by c.ID desc;
+		return;
+	End
+END

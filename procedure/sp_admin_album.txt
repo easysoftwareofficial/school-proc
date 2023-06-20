@@ -1,0 +1,119 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_album]    Script Date: 6/20/2023 3:50:41 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_album](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(20) = null,
+	@userid nvarchar(50) = null,
+	@classid nvarchar(50)= null,
+	@sectionid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@memid int = null,
+	@albumname nvarchar(250) = null,
+	@albumid int = null
+)AS
+BEGIN
+
+	If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) and @userid is not null
+	Begin
+		Select 202 StatusCode, 'User does not exists' Message
+		return;
+	End
+
+	If(@flag='I')
+	Begin
+		If exists(Select 'm' from tbl_album where sch_id=@schid and album_name=@albumname and is_del='N')
+		Begin
+			Select 202 StatusCode, 'Album name already exists' Message
+			return;
+		End
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) and @memid='-1'
+		Begin
+			Select 203 StatusCode, 'MemID does not exists' Message
+			return;
+		End
+		--select * from tbl_album;
+		Insert into tbl_album(sch_id,created_by,updated_by,created_date,updated_date,
+		class_id,section_id,user_id,album_name,is_del) values
+		(@schid,@userid,@userid,GETDATE(),GETDATE(),@classid,@sectionid,@memid,@albumname,
+		'N');
+		Select ID AlbumID, album_name AlbumName, 
+		(Select count(*) from tbl_gallery where album_id=a.ID and sch_id=a.sch_id and is_del='N') NoOfPhoto
+		from tbl_album a
+		where 
+		case when @schid ='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end and 
+		case when @classid is null then '1' else a.class_id end = case when @classid='-1' then '1' else @classid end and
+		case when @sectionid is null then '1' else a.section_id end = case when @sectionid='-1' then '1' else @sectionid end and
+		case when @memid is null then '1' else a.user_id end = case when @memid='-1' then '1' else @memid end and is_del='N'
+		--Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+
+		Select ID AlbumID, album_name AlbumName, 
+			(Select count(*) from tbl_gallery where album_id=a.ID and sch_id=a.sch_id and is_del='N') NoOfPhoto
+			from tbl_album a
+			where 
+			case when @schid ='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end and 
+			case when @classid is null then '1' else a.class_id end = case when @classid='-1' then '1' else @classid end and
+		    case when @sectionid is null then '1' else a.section_id end = case when @sectionid='-1' then '1' else @sectionid end and
+		    case when @memid is null then '1' else a.user_id end = case when @memid='-1' then '1' else @memid end and is_del='N'
+			return;	
+	End
+
+	If(@flag = 'U')
+	Begin
+		If not exists(Select 'm' from tbl_album where ID=@albumid and is_del='N')
+		Begin
+			Select 204 StatusCode, 'AlbumID does not exists' Message
+			return;
+		End
+		Update tbl_album set album_name=@albumname,updated_by=@userid,
+		updated_date=GETDATE()
+		where ID=@albumid and 
+		case when @schid='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end
+		Select 200  StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag = 'R')
+	Begin
+		If not exists(Select 'm' from tbl_album where ID=@albumid and is_del='N')
+		Begin
+			Select 204 StatusCode, 'AlbumID does not exists' Message
+			return;
+		End
+		Update tbl_album set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where ID=@albumid and 
+		case when @schid='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end;
+		if exists(Select 'M' from tbl_album a
+		where 
+		case when @schid ='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end and 
+		case when @classid is null then '1' else a.class_id end = case when @classid='-1' then '1' else @classid end and
+		case when @sectionid is null then '1' else a.section_id end = case when @sectionid='-1' then '1' else @sectionid end and
+		case when @memid is null then '1' else a.user_id end = case when @memid='-1' then '1' else @memid end and is_del='N')
+		BEGIN
+		Select ID AlbumID, album_name AlbumName, 
+		(Select count(*) from tbl_gallery where album_id=a.ID and sch_id=a.sch_id and is_del='N') NoOfPhoto
+		from tbl_album a
+		where 
+		case when @schid ='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end and 
+		case when @classid is null then '1' else a.class_id end = case when @classid='-1' then '1' else @classid end and
+		case when @sectionid is null then '1' else a.section_id end = case when @sectionid='-1' then '1' else @sectionid end and
+		case when @memid is null then '1' else a.user_id end = case when @memid='-1' then '1' else @memid end and is_del='N';
+		END;
+		ELSE
+		BEGIN
+		Select 200  StatusCode, 'Success' Message;
+		END;
+		--Select 200  StatusCode, 'Success' Message;
+		return;
+	End
+
+END

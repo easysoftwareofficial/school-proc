@@ -1,0 +1,92 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_calendar_event]    Script Date: 6/20/2023 4:51:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_calendar_event](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@authcode nvarchar(10) = null,
+	@title nvarchar(50) =null,
+	@description nvarchar(250) = null,
+	@isholiday nchar(1) = null,
+	@engdate nvarchar(20) = null,
+	@eventid int = null,
+	@nepdate nvarchar(20) = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Insert into tbl_cal_event(sch_id,title,description,is_holiday,nepali_date,english_date,
+		created_by,updated_by,created_date,updated_date,del_flag) values
+		(@schid,@title,@description,@isholiday,@nepdate,@engdate,@userid,@userid,
+		GETDATE(),GETDATE(),'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_cal_event where title=@title and ID<>@eventid)
+		Begin
+			Select 203 StatusCode, 'Title already exists' Message
+			return;
+		End 
+		If not exists(Select 'm' from tbl_cal_event where ID=@eventid and del_flag='N')
+		Begin
+			Select 204 StatusCode, 'Event does not exists' Message
+			return;
+		End
+		Update tbl_cal_event set title=@title, description=@description, is_holiday=@isholiday,
+		english_date=@engdate, nepali_date=@nepdate, updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@eventid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+	
+	If(@flag='S')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Select ID EventID, title Title, description Description, is_holiday IsHoliday,
+		nepali_date NepaliDate, english_date EnglishDate
+		from tbl_cal_event
+		where del_flag='N' and sch_id=@schid and 
+		case when @userid='-1' then '1' else created_by end = case when @userid='-1' then '1' else @userid end
+		return;
+	End
+
+	If(@flag='R')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_cal_event where ID=@eventid and del_flag='N')
+		Begin
+			Select 204 StatusCode, 'Event does not exists' Message
+			return;
+		End
+		Update tbl_cal_event set del_flag='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@eventid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

@@ -1,0 +1,287 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_class_routine]    Script Date: 6/20/2023 4:51:30 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_class_routine](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(50) = null,
+	@classid int = null,
+	@authcode nvarchar(250) = null,
+	@sectionid int = null,
+	@weekid int = null,
+	@weekids XML = null,
+	@starttime nvarchar(20) = null,
+	@endtime nvarchar(20) = null,
+	@periodorder nvarchar(10) = null,
+	@subteacher int = null,
+	@roomno nvarchar(10) = null,
+	@isbreak nchar(1) = null,
+	@routineid int = null,
+	@subjectid int = null
+)AS
+BEGIN
+	If not (@flag='I' or @flag='U' or @flag='S' or @flag='R')
+	Begin
+		Select 202 StatusCode, 'Flag does not exists' Message
+		return;
+	End
+	If(@flag='I')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_class_routine where sch_id=@schid and class_id=@classid and section_id=@sectionid 
+		and period_order=@periodorder and week_id=@weekid and is_del='N')
+		Begin
+			Select 204 StatusCode, 'Routine already exists for '+@periodorder+' period' Message
+			return;
+		End
+		
+		if(@weekid!=0)
+		BEGIN
+		Insert into tbl_class_routine(sch_id,class_id,section_id,week_id,start_time,end_time,
+		period_order,sub_teacher_id,room_no,is_break,created_by,updated_by,
+		created_date,updated_date,is_del,subject_id)values
+		(@schid,@classid,@sectionid,@weekid,@starttime,@endtime,@periodorder,
+		@subteacher,@roomno,@isbreak,@userid,@userid,GETDATE(),GETDATE(),'N',@subjectid);		
+	   return;
+		END;
+
+	   if(@weekids is not NULL OR @weekids.exist('*') != 0)
+	   BEGIN
+	   declare @temp table(ID int identity(1,1) primary key, week_day int )
+		Insert into @temp
+		Select week_day=Node.Data.value('(Day)[1]', 'INT')
+		from @weekids.nodes('/root/WeekIDs') Node(Data)
+
+		declare @i int = 1, @count int=(Select count(1) from @temp)
+		while (@count!=0)
+		Begin
+			declare @week_id int = (Select week_day from @temp where ID=@i);
+				If not exists(Select 'm' from tbl_class_routine where sch_id=@schid and class_id=@classid and section_id=@sectionid 
+		    and period_order=@periodorder and week_id=@week_id and is_del='N') 			
+			Begin
+				Insert into tbl_class_routine(sch_id,class_id,section_id,week_id,start_time,end_time,
+		period_order,sub_teacher_id,room_no,is_break,created_by,updated_by,
+		created_date,updated_date,is_del,subject_id)values
+		(@schid,@classid,@sectionid,@week_id,@starttime,@endtime,@periodorder,
+		@subteacher,@roomno,@isbreak,@userid,@userid,GETDATE(),GETDATE(),'N',@subjectid);
+			End
+			set @i=@i+1
+			set @count=@count-1
+		End
+		select 200 StatusCode,'Success' Message;
+	   return;
+	   END;
+
+	   
+
+		Select distinct r.ID RoutineID, r.class_id ClassID, c.clName Class, s.id SectionID, r.week_id WeekID,
+		case r.week_id when 1 then 'Sunday' 
+		when 2 then 'Monday'
+		when 3 then 'Tuesday' 
+		when 4 then 'Wednesday'
+		when 5 then 'Thursday' 
+		when 6 then 'Friday'
+		when 7 then 'Saturday'
+		end Week,
+		FORMAT(CAST(start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(end_time as datetime),'hh:mm tt') EndTime,		
+		r.period_order Period,
+		r.subject_id SubjectID,
+		sub.subjectName Subject,
+		r.sub_teacher_id SubTeacherID,
+		(u.firstName+' '+u.lastName) SubTeacher,
+		r.room_no RoomNo,
+		r.is_break IsBreakID,
+		case r.is_break when 'L' then 'Long'
+		 when 'S' then 'Short'
+		 when 'E' then 'ECA'
+		 else 'Nth'
+		 end
+		 IsBreak
+		from tbl_class_routine r
+		left join stClass c on c.id=r.class_id 
+		left join stSection s on s.id=r.section_id 
+		left join mSheetSubject sub on sub.id=r.subject_id and sub.classID=r.class_id
+		left join stNamelist u on u.id=r.sub_teacher_id 
+		where r.sch_id=@schid 
+		and case when @userid='-1' then '1' else r.created_by end=case when @userid='-1' then '1' else @userid end
+		and r.class_id=@classid and
+		r.section_id=@sectionid and 
+		case when @weekid ='-1' then'1' else r.week_id end= case when @weekid ='-1' then'1' else @weekid end and r.is_del='N' order by period_order
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		If not exists(Select 'm' from tbl_class_routine where  ID=@routineid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'RoutineID does not exists' Message
+			return;
+		End
+		Update tbl_class_routine set updated_by=@userid,updated_date=GETDATE(),
+		class_id=@classid,section_id=@sectionid,week_id=@weekid,start_time=@starttime,
+		end_time=@endtime,period_order=@periodorder,sub_teacher_id=@subteacher,
+		room_no=@roomno,is_break=@isbreak,subject_id=@subjectid
+		where sch_id=@schid and ID=@routineid
+
+		Select distinct r.ID RoutineID, r.class_id ClassID, c.clName Class, s.id SectionID, r.week_id WeekID,
+		case r.week_id when 1 then 'Sunday' 
+		when 2 then 'Monday'
+		when 3 then 'Tuesday' 
+		when 4 then 'Wednesday'
+		when 5 then 'Thursday' 
+		when 6 then 'Friday'
+		when 7 then 'Saturday'
+		end Week,
+		FORMAT(CAST(start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(end_time as datetime),'hh:mm tt') EndTime,		
+		r.period_order Period,
+		r.subject_id SubjectID,
+		sub.subjectName Subject,
+		r.sub_teacher_id SubTeacherID,
+		(u.firstName+' '+u.lastName) SubTeacher,
+		r.room_no RoomNo,
+		r.is_break IsBreakID,
+		case r.is_break when 'L' then 'Long'
+		 when 'S' then 'Short'
+		 when 'E' then 'ECA'
+		 else 'Nth'
+		 end
+		 IsBreak
+		from tbl_class_routine r
+		left join stClass c on c.id=r.class_id 
+		left join stSection s on s.id=r.section_id 
+		left join mSheetSubject sub on sub.id=r.subject_id and sub.classID=r.class_id
+		left join stNamelist u on u.id=r.sub_teacher_id 
+		where r.sch_id=@schid 
+		and case when @userid='-1' then '1' else r.created_by end=case when @userid='-1' then '1' else @userid end
+		and r.class_id=@classid and
+		r.section_id=@sectionid and 
+		case when @weekid ='-1' then'1' else r.week_id end= case when @weekid ='-1' then'1' else @weekid end and r.is_del='N' order by period_order
+
+		return;
+	End 
+
+	If(@flag='S')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		--select * from tbl_class_routine;
+		Select distinct r.ID RoutineID, r.class_id ClassID, c.clName Class, s.id SectionID, r.week_id WeekID,
+		case r.week_id when 1 then 'Sunday' 
+		when 2 then 'Monday'
+		when 3 then 'Tuesday' 
+		when 4 then 'Wednesday'
+		when 5 then 'Thursday' 
+		when 6 then 'Friday'
+		when 7 then 'Saturday'
+		end Week,
+		FORMAT(CAST(start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(end_time as datetime),'hh:mm tt') EndTime,		
+		r.period_order Period,
+		r.subject_id SubjectID,
+		sub.subjectName Subject,
+		r.sub_teacher_id SubTeacherID,
+		(u.firstName+' '+u.lastName) SubTeacher,
+		r.room_no RoomNo,
+		r.is_break IsBreakID,
+		case r.is_break when 'L' then 'Long'
+		 when 'S' then 'Short'
+		 when 'E' then 'ECA'
+		 else 'Nth'
+		 end
+		 IsBreak
+		from tbl_class_routine r
+		left join stClass c on c.id=r.class_id 
+		left join stSection s on s.id=r.section_id 
+		left join mSheetSubject sub on sub.id=r.subject_id and sub.classID=r.class_id
+		left join stNamelist u on u.id=r.sub_teacher_id 
+		where r.sch_id=@schid 
+		and case when @userid='-1' then '1' else r.created_by end=case when @userid='-1' then '1' else @userid end
+		and r.class_id=@classid and
+		r.section_id=@sectionid and 
+		case when @weekid ='-1' then'1' else r.week_id end= case when @weekid ='-1' then'1' else @weekid end and r.is_del='N' order by period_order
+
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+	
+		If not exists(Select 'm' from stNamelist where  id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_class_routine where sch_id=@schid and ID=@routineid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'RoutineID does not exists' Message
+			return;
+		End
+		Update tbl_class_routine set updated_by=@userid,updated_date=GETDATE(),is_del='Y'
+		where sch_id=@schid and ID=@routineid;
+
+		if not exists(select 'M' from tbl_class_routine where sch_id=@schid and class_id=@classid and section_id=@sectionid and week_id=@weekid and is_del='N')
+		BEGIN
+		Select 200 StatusCode, 'Success' Message
+		RETURN;
+		END;
+
+			Select distinct r.ID RoutineID, r.class_id ClassID, c.clName Class, s.id SectionID, r.week_id WeekID,
+		case r.week_id when 1 then 'Sunday' 
+		when 2 then 'Monday'
+		when 3 then 'Tuesday' 
+		when 4 then 'Wednesday'
+		when 5 then 'Thursday' 
+		when 6 then 'Friday'
+		when 7 then 'Saturday'
+		end Week,
+		FORMAT(CAST(start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(end_time as datetime),'hh:mm tt') EndTime,		
+		r.period_order Period,
+		r.subject_id SubjectID,
+		sub.subjectName Subject,
+		r.sub_teacher_id SubTeacherID,
+		(u.firstName+' '+u.lastName) SubTeacher,
+		r.room_no RoomNo,
+		r.is_break IsBreakID,
+		case r.is_break when 'L' then 'Long'
+		 when 'S' then 'Short'
+		 when 'E' then 'ECA'
+		 else 'Nth'
+		 end
+		 IsBreak
+		from tbl_class_routine r
+		left join stClass c on c.id=r.class_id 
+		left join stSection s on s.id=r.section_id 
+		left join mSheetSubject sub on sub.id=r.subject_id and sub.classID=r.class_id
+		left join stNamelist u on u.id=r.sub_teacher_id 
+		where r.sch_id=@schid 
+		and case when @userid='-1' then '1' else r.created_by end=case when @userid='-1' then '1' else @userid end
+		and r.class_id=@classid and
+		r.section_id=@sectionid and 
+		case when @weekid ='-1' then'1' else r.week_id end= case when @weekid ='-1' then'1' else @weekid end and r.is_del='N' order by period_order
+
+		return;
+	End	
+END

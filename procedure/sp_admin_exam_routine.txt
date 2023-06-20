@@ -1,0 +1,231 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_exam_routine]    Script Date: 6/20/2023 5:00:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_exam_routine](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@subjectid int = null,
+	@weekid int = null,
+	@termid int = null,
+	@shifttype nchar(1),
+	@starttime nvarchar(20) = null,
+	@authcode nvarchar(250) = null,
+	@endtime nvarchar(20) = null,
+	@roomno nvarchar(10) = null,
+	@examdate nvarchar(20) = null,
+	@routineid int = null
+)AS
+BEGIN
+	If not (@flag='I' or @flag='U' or @flag='S' or @flag='R')
+	Begin
+		Select 202 StatusCode, 'Flag does not exists' Message
+		return;
+	End
+
+	If(@flag='I')
+	Begin	
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(select 'M' from msheetTerminal where id=@termid)
+		Begin
+		
+			Select 202 StatusCode, 'Term does not exists' Message
+			return;
+		End
+
+		Insert into tbl_exam_routine(sch_id,class_id,week_id,term_id,shift_id,
+		start_time,end_time,room_no,exam_date,created_by,updated_by,created_date,updated_date,
+		is_del,subject_id) values
+		(@schid,@classid,@weekid,@termid,@shifttype,@starttime,@endtime,@roomno,
+		@examdate,@userid,@userid,GETDATE(),GETDATE(),'N',@subjectid)
+			
+			Select er.ID RoutineID,er.class_id ClassID,c.clName Class,er.subject_id SubjectID,s.subjectName Subject,er.term_id TermID,t.examTerminal Term,
+		case er.week_id when '-1' then 'All'
+		when '1' then 'Sunday'
+		when '2' then 'Monday'
+		when '3' then 'Tuesday'
+		when '4' then 'Wednesday'
+		when '5' then 'Thursday'
+		when '6' then 'Friday'
+		when '7' then 'Saturday'
+		end Week,
+		er.week_id WeekID,
+		case er.shift_id when 'M' then 'Morning'
+		when 'D' then 'Day'
+		when 'E' then 'Evening'
+		when 'N' then 'Night'
+		end ShiftType,
+		er.shift_id ShiftTypeID,
+		er.start_time StartTime,
+		er.end_time EndTime,
+		er.room_no RoomNo,
+		er.exam_date ExamDate
+		from tbl_exam_routine er
+		left join stClass c on c.id=er.class_id
+		left join mSheetSubject s on s.id=er.subject_id
+		left join msheetTerminal t on t.id=er.term_id 		
+		where er.is_del='N' and er.sch_id=@schid and er.class_id=@classid and er.term_id=@termid
+		and 
+		case when @userid='-1' then '1' else er.created_by end = case when @userid='-1' then '1' else @userid end;
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		
+			If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(select 'M' from msheetTerminal where id=@termid)
+		Begin
+		
+			Select 202 StatusCode, 'Term does not exists' Message
+			return;
+		End
+
+		If not exists(Select 'm' from tbl_exam_routine with (nolock) where sch_id=@schid and ID=@routineid and is_del='N')
+		Begin
+			Select 205 StatusCode, 'Routine does not exists' Message
+			return;
+		End
+		Update tbl_exam_routine set updated_date=GETDATE(),updated_by=@userid,class_id=@classid,subject_id=@subjectid,
+		week_id=@weekid,term_id=@termid,shift_id=@shifttype,start_time=@starttime,end_time=@endtime,
+		room_no=@roomno,exam_date=@examdate
+		where sch_id=@schid and ID=@routineid
+
+		Select er.ID RoutineID,er.class_id ClassID,c.clName Class,er.subject_id SubjectID,s.subjectName Subject,er.term_id TermID,t.examTerminal Term,
+		case er.week_id when '-1' then 'All'
+		when '1' then 'Sunday'
+		when '2' then 'Monday'
+		when '3' then 'Tuesday'
+		when '4' then 'Wednesday'
+		when '5' then 'Thursday'
+		when '6' then 'Friday'
+		when '7' then 'Saturday'
+		end Week,
+		er.week_id WeekID,
+		case er.shift_id when 'M' then 'Morning'
+		when 'D' then 'Day'
+		when 'E' then 'Evening'
+		when 'N' then 'Night'
+		end ShiftType,
+		er.shift_id ShiftTypeID,
+		er.start_time StartTime,
+		er.end_time EndTime,
+		er.room_no RoomNo,
+		er.exam_date ExamDate
+		from tbl_exam_routine er
+		left join stClass c on c.id=er.class_id
+		left join mSheetSubject s on s.id=er.subject_id
+		left join msheetTerminal t on t.id=er.term_id 		
+		where er.is_del='N' and er.sch_id=@schid and er.class_id=@classid and er.term_id=@termid
+		and 
+		case when @userid='-1' then '1' else er.created_by end = case when @userid='-1' then '1' else @userid end;
+		return;
+	end
+
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(select 'M' from msheetTerminal where id=@termid)
+		Begin
+		
+			Select 202 StatusCode, 'Term does not exists' Message
+			return;
+		End
+
+		Select er.ID RoutineID,er.class_id ClassID,c.clName Class,er.subject_id SubjectID,s.subjectName Subject,er.term_id TermID,t.examTerminal Term,
+		case er.week_id when '-1' then 'All'
+		when '1' then 'Sunday'
+		when '2' then 'Monday'
+		when '3' then 'Tuesday'
+		when '4' then 'Wednesday'
+		when '5' then 'Thursday'
+		when '6' then 'Friday'
+		when '7' then 'Saturday'
+		end Week,
+		er.week_id WeekID,
+		case er.shift_id when 'M' then 'Morning'
+		when 'D' then 'Day'
+		when 'E' then 'Evening'
+		when 'N' then 'Night'
+		end ShiftType,
+		er.shift_id ShiftTypeID,
+		er.start_time StartTime,
+		er.end_time EndTime,
+		er.room_no RoomNo,
+		er.exam_date ExamDate
+		from tbl_exam_routine er
+		left join stClass c on c.id=er.class_id
+		left join mSheetSubject s on s.id=er.subject_id
+		left join msheetTerminal t on t.id=er.term_id 		
+		where er.is_del='N' and er.sch_id=@schid and er.class_id=@classid and er.term_id=@termid
+		and 
+		case when @userid='-1' then '1' else er.created_by end = case when @userid='-1' then '1' else @userid end;
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+			If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+	
+		Update tbl_exam_routine set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@routineid;
+
+		if not exists(select 'M' from tbl_exam_routine where sch_id=@schid and class_id=@classid and term_id=@termid and is_del='N')
+		BEGIN
+		Select 200 StatusCode, 'Success' Message
+		RETURN;
+		END;
+
+			Select er.ID RoutineID,er.class_id ClassID,c.clName Class,er.subject_id SubjectID,s.subjectName Subject,er.term_id TermID,t.examTerminal Term,
+		case er.week_id when '-1' then 'All'
+		when '1' then 'Sunday'
+		when '2' then 'Monday'
+		when '3' then 'Tuesday'
+		when '4' then 'Wednesday'
+		when '5' then 'Thursday'
+		when '6' then 'Friday'
+		when '7' then 'Saturday'
+		end Week,
+		er.week_id WeekID,
+		case er.shift_id when 'M' then 'Morning'
+		when 'D' then 'Day'
+		when 'E' then 'Evening'
+		when 'N' then 'Night'
+		end ShiftType,
+		er.shift_id ShiftTypeID,
+		er.start_time StartTime,
+		er.end_time EndTime,
+		er.room_no RoomNo,
+		er.exam_date ExamDate
+		from tbl_exam_routine er
+		left join stClass c on c.id=er.class_id
+		left join mSheetSubject s on s.id=er.subject_id
+		left join msheetTerminal t on t.id=er.term_id 		
+		where er.is_del='N' and er.sch_id=@schid and er.class_id=@classid and er.term_id=@termid
+		and 
+		case when @userid='-1' then '1' else er.created_by end = case when @userid='-1' then '1' else @userid end;
+		return;
+	End 
+END

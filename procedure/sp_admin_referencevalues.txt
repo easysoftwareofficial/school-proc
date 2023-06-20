@@ -1,0 +1,282 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_referencevalues]    Script Date: 6/20/2023 9:55:52 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_referencevalues](
+	@schid nvarchar(50) = null,
+	@userid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@dflag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@sectionids xml = null,
+	@imgurl nvarchar(250) = null,
+	@flag nvarchar(10) = null
+)
+AS
+BEGIN
+If(@flag='S')
+Begin
+
+-- CLASS WISE
+	If(lower(@dflag)='c')
+	Begin
+		
+
+		if(@userid='-1')
+		begin
+
+		select @schid SchID,id ClassID,case when clName='' then '-' else clName end as ClassName,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id and u.gender='Male') Male,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id and u.gender='Female') Female,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id) Total
+		 from stClass c where 
+		clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		return;
+		end;
+
+		select distinct @schid SchID,c.id ClassID,case when clName='' then '-' else clName end as ClassName,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id and u.gender='Male') Male,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id and u.gender='Female') Female,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=c.id) Total
+		from stClass c,tbl_teaching_subject ts where ts.class_id=c.id and ts.user_id=@userid and
+		clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes');
+	
+	End
+
+
+	-- SECTION
+	If(lower(@dflag)='s')
+	Begin
+	
+
+		if(@userid='-1')
+		BEGIN
+		--select distinct classID ClassID,sectionID SectionID,clName ClassName,case when secName='' then '-' else secName end as SectionName,
+		--(select count(*) from stNamelist u where  
+		--academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		--and u.classID=c.id and u.sectionID=b.id and u.gender='Male' and u.del_flag='N') Male,
+		--(select count(*) from stNamelist u where  
+		--academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		--and u.classID=c.id and u.sectionID=b.id and u.gender='Female' and u.del_flag='N') Female,
+		--(select count(*) from stNamelist u where  
+		--academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		--and u.classID=c.id and u.sectionID=b.id and u.del_flag='N') Total
+		--from stSection b,stNamelist a
+		--inner join stClass c on c.id=a.classID and c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')   
+		--where a.sectionID=b.id and b.secName!='' and b.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		
+		select distinct '0' ClassID,sectionID SectionID,'' ClassName,case when secName='' then '-' else secName end as SectionName,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=a.classID and u.sectionID=b.id and u.gender='Male') Male,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=a.classID and u.sectionID=b.id and u.gender='Female') Female,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=a.classID and u.sectionID=b.id) Total
+		from stSection b,stNamelist a
+		--inner join stClass c on c.id=a.classID and c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')   
+		where a.sectionID=b.id and b.secName!='' and b.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		and a.classID=@classid;
+		return;
+		END;
+		
+		select distinct @schid SchID,ts.class_id ClassID,clName ClassName,s.id SectionID,s.secName SectionName,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=ts.class_id and u.sectionID=ts.section_id and u.gender='Male') Male,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=ts.class_id and u.sectionID=ts.section_id  and u.gender='Female') Female,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=ts.class_id and u.sectionID=ts.section_id) Total
+	    from tbl_teaching_subject ts,stClass c,stSection s
+		where
+		user_id=@userid and c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and
+		s.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and
+		ts.class_id=c.id and ts.section_id=s.id and ts.class_id=@classid;
+		return;
+	End
+
+	--select * from tbl_teaching_subject where sch_id='ES25' and user_id='2'
+	    
+		
+	-- TERM
+	If(lower(@dflag)='t')
+	Begin
+
+	select @schid SchID,id TermID,case when examTerminal='' then '-' else examTerminal end as TermName,
+	case when len(examDate)!=10 then '" + connect.GlobalConnection.transactionDate + "' else examDate end as ExamDate,
+	case when len(examDate)!=10 then '" + connect.GlobalConnection.transactionDate + "' else examDate end as ExamResultDate,
+	case when workingDays='' then '0' else workingDays end as WorkingDays
+	from msheetTerminal 
+	where academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes');
+	return;
+	End
+
+	-- TEACHING SUBJECT
+	If(lower(@dflag)='sb')
+	Begin
+	
+	   if(@userid='-1')
+		begin
+	select @schid SchID,b.id as SubjectID,b.subjectName as SubjectName
+	from mSheetSubject b where b.subjectName!='' 
+	and b.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and classID=@classid;
+		
+		return;
+		end;
+
+		if(@sectionid!='')
+		begin
+		select distinct ts.sch_id SchID,ts.subject_id SubjectID,s.subjectName SubjectName from 
+		tbl_teaching_subject ts,mSheetSubject s
+		where
+		s.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and
+		s.classID=ts.class_id  and ts.subject_id=s.id and ts.class_id=@classid and ts.section_id=@sectionid and user_id=@userid;
+		return;
+		end
+
+		
+	
+	
+	   if(@sectionids is not NULL OR @sectionids.exist('*') != 0)
+	   BEGIN
+	   select distinct ts.sch_id SchID,ts.subject_id SubjectID,s.subjectName SubjectName from 
+		tbl_teaching_subject ts,mSheetSubject s
+		where s.classID=ts.class_id  and ts.subject_id=s.id and ts.class_id=@classid and ts.section_id=@sectionid and user_id=@userid;
+
+		select distinct ts.sch_id SchID,ts.subject_id SubjectID,s.subjectName SubjectName from 
+		tbl_teaching_subject ts,mSheetSubject s
+		where  ts.subject_id=s.id and ts.class_id=s.classID
+		and ts.class_id=@classid and user_id=@userid and
+		ts.section_id= ANY (Select 
+		Node.Data.value('(SectionID)[1]', 'NVARCHAR(100)')		
+		FROM @sectionids.nodes('/root/SectionIDs') Node(Data));
+		return;
+		END;
+
+	End
+
+	--If(@dflag='SY')
+	--Begin
+	--	If not exists(Select 'm' from tbl_school with(nolock) where sch_id = @schid and del_flag='N')
+	--	Begin
+	--		Select 201 StatusCode, 'School does not exists' Message
+	--		return;
+	--	End
+	--	If exists(Select 'm' from tbl_school with(nolock) where sch_id=@schid and expiry_date<GETDATE())
+	--	Begin
+	--		Select 202 StatusCode, 'License expired' Message
+	--		return;
+	--	End
+	--	If exists(Select 'm' from tbl_school with(nolock) where sch_id = @schid and allow_app='N')
+	--	Begin
+	--		Select 203 StatusCode, 'Permission denied' Message
+	--		return;
+	--	End
+	--	If exists(Select 'm' from tbl_school with(nolock) where sch_id = @schid and is_approved='N')
+	--	Begin
+	--		Select 204 StatusCode, 'School does not exists' Message
+	--		return;
+	--	End
+	--	If not exists(Select 'm' from tbl_user with (nolock) where sch_id=@schid and user_id=@userid and del_flag='N') and @userid<>'-1'
+	--	Begin
+	--		Select 202 StatusCode, 'User does not exists' Message
+	--		return;
+	--	End
+	--	Select academic_year AcademicYear, year_from "From", year_to "To", is_active IsActive
+	--	from tbl_academic_year
+	--	where sch_id=@schid and 
+	--	case when @userid='-1' then '1' else created_by end = case when @userid='-1' then '1' else @userid end 
+	--	return;
+	--End
+
+	If(@dflag='DA')
+	Begin
+	
+	Select 
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student') StudentCt,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Teacher') TeacherCt,
+		(select count(*) from stNamelist u where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Admin') AdminCt,
+		(Select count(*) from tbl_notification where sch_id=@schid and is_del='N') NotificationCt
+	
+		return;
+	End
+
+	if(@dflag='STD')
+	BEGIN
+
+	select  @schid SchID,u.id StudentID,classid ClassID,appUser StdUserName,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as StdFullName,CAST(rNo as nvarchar(50)) RollNo,u.sectionID SectionID,
+    	ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,
+		'photo/user/'+u.image Image,u.fatherName FatherName,DOB DateOfBirth,gender Gender,
+		left(fatherMobile,10) Mobile,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=@classid 
+		and u.sectionID = @sectionid order by CAST(u.rNo as bigint) asc;
+	
+	END
+
+
+	If(@dflag='DT')
+	Begin
+		
+		Select 
+		(Select count(*) from tbl_assignment where sch_id=@schid and created_by=@userid) AssignmentCt,
+		(Select count(*) from tbl_teaching_subject where sch_id=@schid and user_id=@userid) TeachingSubjectCt,
+		(Select count(*) from tbl_leave where sch_id=@schid and user_id=@userid and user_type='T') LeaveCt,
+		(Select count(*) from tbl_notification where sch_id=@schid and user_id=@userid and user_type='T') NotificationCt
+	
+		return;
+	End
+
+	If(@dflag='DS')
+	Begin
+		Select 
+		(Select count(*) from tbl_assignment where sch_id=@schid and class_id=@classid and section_id=@sectionid) AssignmentCt,
+		(Select count(*) from tbl_appreciation where sch_id=@schid and user_id=@userid) AppreciationCt,
+		(Select count(*) from tbl_leave where sch_id=@schid and user_id=@userid and user_type='S') LeaveCt,
+		(Select count(*) from tbl_notification where sch_id=@schid and user_id=@userid and user_type='S') NotificationCt	
+		return;
+	End
+
+	if(@dflag='TL')
+	begin
+	
+        select distinct ts.user_id UserID,(u.firstName+' '+u.lastName) FullName from tbl_teaching_subject ts,stNamelist u 
+		where ts.sch_id=@schid and ts.user_id=u.id and ts.class_id=@classid and ts.section_id=@sectionid;
+		return;
+
+	end
+
+	if(@dflag='SS')
+	BEGIN
+	SELECT s.id user_id,
+	ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) as reg_num
+	FROM stNamelist s,acLink a WHERE classID=@classid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	END
+
+End
+END

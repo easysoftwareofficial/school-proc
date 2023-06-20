@@ -1,0 +1,65 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_gallery]    Script Date: 6/20/2023 9:14:37 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_gallery](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(10) = null,
+	@authcode nvarchar(250) = null,
+	@userid int = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@albumid int = null,
+	@title nvarchar(50) = null,
+	@photo nvarchar(250) =null,
+	@imgurl nvarchar(250) = null,
+	@photoid int = null
+)AS
+BEGIN
+
+
+	If(@flag='i')
+	Begin
+		If not exists(Select 'm' from tbl_album where ID=@albumid and is_del='N')
+		Begin
+			Select 204 StatusCode, 'AlbumID does not exists' Message
+			return;
+		End
+		Insert into tbl_gallery(sch_id,created_by,updated_by,created_date,updated_date,
+		album_id,file_name,file_src,is_del) values
+		( @schid,@userid,@userid,GETDATE(),GETDATE(),@albumid,@title,
+		 @photo,'N')
+		Select 200 StatusCode, 'Success' Message;
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		Select g.ID PhotoID, file_name PhotoName, @imgurl+'photo/gallery/'+file_src PhotoUrl,
+		a.album_name AlbumName
+		from tbl_gallery g
+		left join tbl_album a on a.ID=g.album_id and a.sch_id=a.sch_id and a.is_del='N'
+		where g.sch_id=@schid and 
+		case when @userid='-1' then '1' else g.created_by end = case when @userid='-1' then '1' else @userid end
+		and case when @albumid='-1' then '1' else g.album_id end = case when @albumid='-1' then '1' else @albumid end
+		and g.is_del='N'
+	End
+
+	If(@flag='R')
+	Begin
+		
+		If not exists(Select 'm' from tbl_gallery where sch_id=@schid and ID=@photoid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Photo does not exists' Message
+			return;
+		End
+		Update tbl_gallery set is_del='Y',updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@photoid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

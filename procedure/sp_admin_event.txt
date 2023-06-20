@@ -1,0 +1,102 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_event]    Script Date: 6/20/2023 4:59:14 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_admin_event](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@flag nvarchar(10) = null,
+	@dflag nvarchar(10) = null,
+	@title nvarchar(50) = null,
+	@description nvarchar(500) = null,
+	@engfrom nvarchar(10) = null,
+	@engto nvarchar(10) = null,
+	@nepfrom nvarchar(10) = null,
+	@nepto nvarchar(10) = null,
+	@timestart nvarchar(50) = null,
+	@timeend nvarchar(50) = null,
+	@venue nvarchar(50) = null,
+	@category nvarchar(50) = null,
+	@contact nvarchar(50) = null,
+	@email nvarchar(100) = null,
+	@latitude nvarchar(50) = null,
+	@longitude nvarchar(50) = null,
+	@banner nvarchar(250) = null,
+	@organizedby nvarchar(50) =  null,
+	@eventid int= null,
+	@imgurl nvarchar(500) = ''
+)AS
+BEGIN
+	If not (@flag='I' or @flag='U' or @flag='S' or @flag='D')
+	Begin
+		Select 204 StatusCode, 'Flag does not match' Message
+		return;
+	End	
+	If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>-1
+	Begin
+		Select 202 StatusCode, 'User does not exists' Message
+		return;
+	End 
+	If(@flag='I')
+	Begin
+		
+		Insert into tbl_event(sch_id,created_by,updated_by,title,description,english_date_from,english_date_to,
+		nepali_date_from,nepali_date_to,time_start,time_end,venue,category,contact,email,latitude,longitude,
+		banner,organized_by,created_date,updated_date,del_flag) values
+		(@schid,@userid,@userid,@title,@description,@engfrom,@engto,@nepfrom,@nepto,@timestart,@timeend,@venue,
+		@category,@contact,@email,@latitude,@longitude,@banner,@organizedby,GETDATE(),GETDATE(),'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		If not exists(Select 'm' from tbl_event where ID=@eventid and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Event does not exists' Message
+			return;
+		end
+		Update tbl_event set title=@title,description=@description,english_date_from=@engfrom,
+		english_date_to=@engto,nepali_date_from=@nepfrom,nepali_date_to=@nepto,time_start=@timestart,
+		time_end=@timeend,venue=@venue,category=@category,contact=@contact,email=@email,
+		latitude=@latitude,longitude=@longitude,banner=isnull(@banner,banner),organized_by=@organizedby,
+		updated_by=@userid,updated_date=GETDATE()
+		where sch_id=@schid and ID=@eventid
+		Select 200 StatusCode, 'Success' Message
+		return;
+		
+	End
+
+	IF(@flag='S')
+	Begin
+		Select e.ID EventID, e.title Title, e.description Description, e.nepali_date_from NepDateFrom,
+		e.nepali_date_to NepDateTo, e.english_date_from EngDateFrom, e.english_date_to EngDateTo,
+		e.time_start TimeStart, e.time_end TimeEnd, e.venue Venue, e.category Category, e.contact Contact,
+		e.email Email, e.latitude Latitude, e.longitude Longitude, (@imgurl+'photo/event/'+e.banner) Banner,
+		e.organized_by OrganizedBy
+		from tbl_event e
+		where sch_id=@schid and 
+		case when @userid='-1' then '1' else e.created_by end=case when @userid = '-1' then '1' else @userid end
+		and del_flag<>'Y'
+		return;
+	End	
+
+	If(@flag='D')
+	Begin
+		If not exists(Select 'm' from tbl_event where ID=@eventid and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Event does not exists' Message
+			return;
+		end
+		Update tbl_event set del_flag='Y' 
+		where sch_id=@schid and created_by=@userid and ID=@eventid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+END

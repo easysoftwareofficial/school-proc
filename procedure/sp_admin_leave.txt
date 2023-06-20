@@ -1,0 +1,184 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_leave]    Script Date: 6/20/2023 9:15:48 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_leave](
+	@schid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@dflag nvarchar(10) = null,
+	@usertype nvarchar(10) = null,
+	@classid int= null,
+	@sectionid int = null,
+	@memid int = null,
+	@date nvarchar(20) = null,
+	@isapproved nvarchar(10) = null,
+	@approvedremarks nvarchar(250) = null,
+	@leaveid int = null
+)
+AS
+BEGIN
+	If not (@flag='S' or @flag='US' or @flag='R')
+	Begin
+		Select 203 StatusCode, 'Flag does not exists' Message
+		return;
+	End
+	If(@flag='S')
+	Begin	
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) and @memid<>-1
+		Begin
+			Select 202 StatusCode, 'Member does not exists' Message
+			return;
+		End
+		If(@dflag='E')
+		Begin
+			Select l.id LeaveID, l.user_id MemID, (firstName+' '+lastName) Name, u.appType UserType, l.title Title,
+			l.description "Description", eng_date_from "From", eng_date_to "To", no_of_days NoOfDays, 
+			l.is_approved IsApprovedID, 
+			case l.is_approved when 'P' then 'Pending'
+			when 'Y' then 'Approved'
+			when 'N' then 'Rejected'
+			end IsApproved,
+			l.approved_remarks ApprovedRemarks,
+			(Select top 1 (firstName+' '+lastName) from stNamelist where id=l.approved_by) ApprovedBy,
+			l.created_date CreatedDate
+			from tbl_leave l
+			left join stNamelist u on u.id =l.user_id
+			where l.sch_id=@schid and 
+			case when @userid='-1' then '1' else l.approved_by end = case when @userid='-1' then '1' else @userid end and
+			case when @usertype='-1' then '1' else l.user_type end = case when @usertype='-1' then '1' else @usertype end
+			and case when @classid='-1' then '1' else u.classID end = case when @classid='-1' then '1' else @classid end
+			and case when @sectionid='-1' then '1' else u.sectionID end = case when @sectionid='-1' then '1' else @sectionid end
+			and case when @memid='-1' then '1' else l.user_id end = case when @memid='-1' then '1' else @memid end
+			and l.eng_date_from<=@date and l.eng_date_to>=@date and l.is_del='N' and
+			case when @isapproved = '-1' then '1' else l.is_approved end = case when @isapproved = '-1' then '1' else @isapproved end
+			return;
+		End
+
+		If(@dflag='N')
+		Begin
+			Select l.id LeaveID, l.user_id MemID, (u.firstName+' '+u.lastName) Name, u.appType UserType, l.title Title,
+			l.description "Description", nep_date_from "From", nep_date_to "To", no_of_days NoOfDays, 
+			l.is_approved IsApprovedID, 
+			case l.is_approved when 'P' then 'Pending'
+			when 'Y' then 'Approved'
+			when 'N' then 'Rejected'
+			end IsApproved,
+			l.approved_remarks ApprovedRemarks,
+			(Select firstName+' '+lastName from stNamelist where id=l.approved_by) ApprovedBy,
+			l.created_date CreatedDate
+			from tbl_leave l
+			left join stNamelist u on u.id =l.user_id 
+			where l.sch_id=@schid and
+			case when @userid='-1' then '1' else l.approved_by end = case when @userid='-1' then '1' else @userid end
+			and case when @usertype='-1' then '1' else l.user_type end = case when @usertype='-1' then '1' else @usertype end
+			and case when @classid='-1' then '1' else u.classID end = case when @classid='-1' then '1' else @classid end
+			and case when @sectionid='-1' then '1' else u.sectionID end = case when @sectionid='-1' then '1' else @sectionid end
+			and case when @memid='-1' then '1' else l.user_id end = case when @memid='-1' then '1' else @memid end
+			and l.nep_date_from<=@date and l.nep_date_to>=@date and l.is_del='N' and
+			case when @isapproved = '-1' then '1' else l.is_approved end = case when @isapproved = '-1' then '1' else @isapproved end order by l.id desc
+			return;
+		End
+	End
+
+	
+	If(@flag='US')
+	Begin
+		If not exists(Select 'm' from tbl_leave with (nolock) where id=@leaveid and is_del='N')
+		Begin
+			Select 202 StatusCode, 'Leave does not exists' Message
+			return;
+		End
+		
+		
+		Update tbl_leave set approved_remarks=@approvedremarks, is_approved=@isapproved,
+		approved_by=@userid, updated_date = GETDATE()
+		where sch_id=@schid and id=@leaveid;
+		if(@classid=0 and @sectionid=0)
+		BEGIN
+		Select 200 StatusCode, 'Success' Message;
+		return;
+		END
+		ELSE
+		BEGIN
+		Select l.id LeaveID, l.user_id MemID, (u.firstName+' '+u.lastName) Name, u.appType UserType, l.title Title,
+				l.description "Description", nep_date_from "From", nep_date_to "To", no_of_days NoOfDays, 
+				l.is_approved IsApprovedID, 
+				case l.is_approved when 'P' then 'Pending'
+				when 'Y' then 'Approved'
+				when 'N' then 'Rejected'
+				end IsApproved,
+				l.approved_remarks ApprovedRemarks,
+				(Select firstName+' '+lastName  from stNamelist where id=l.approved_by) ApprovedBy,
+				l.created_date CreatedDate
+				from tbl_leave l
+				left join stNamelist u on u.id =l.user_id 
+				where l.sch_id=@schid and
+				--case when @userid='-1' then '1' else l.approved_by end = case when @userid='-1' then '1' else @userid end and 
+				case when @usertype='-1' then '1' else l.user_type end = case when @usertype='-1' then '1' else @usertype end
+				and case when @classid='-1' then '1' else u.classID end = case when @classid='-1' then '1' else @classid end
+				and case when @sectionid='-1' then '1' else u.sectionID end = case when @sectionid='-1' then '1' else @sectionid end
+				--and case when @memid='-1' then '1' else l.user_id end = case when @memid='-1' then '1' else @memid end and
+				 and l.nep_date_from<=@date and l.nep_date_to>=@date and l.is_del='N';
+			END;											--case when @isapproved = '-1' then '1' else l.is_approved end = case when @isapproved = '-1' then '1' else @isapproved end order by id desc;
+			--Select id LeaveID, title Title, description "Description", nep_date_from "From", 
+			--nep_date_to "To", no_of_days NoOfDays,is_approved IsApprovedID,
+			--case ISNULL(is_approved,'P')
+			--when N'P' then 'Pending'
+			--when N'A' then 'Approved' 
+			--when N'R' then 'Rejected'
+			--end IsApproved, 
+			--@memid UserID,			
+			--approved_remarks ApprovedRemarks,
+			--(Select full_name from tbl_user where user_id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss.mmm') CreatedDate
+			--from tbl_leave
+			--where sch_id=@schid and user_id = (select distinct user_id from tbl_leave where ID=@leaveid) and is_del='N'
+			--order by id desc
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+
+
+	IF(@flag='R')
+	BEGIN
+	
+		If not exists(Select 'm' from tbl_leave with (nolock) where id=@leaveid and is_del='N')
+		Begin
+			Select 202 StatusCode, 'Leave does not exists' Message
+			return;
+		End
+		Update tbl_leave set is_del='Y', updated_date = GETDATE()
+		where sch_id=@schid and id=@leaveid;
+
+		if(@classid=0 and @sectionid=0)
+		BEGIN
+		Select 200 StatusCode, 'Success' Message;
+		return;
+		END
+		ELSE
+		BEGIN
+		Select id LeaveID, title Title, description "Description", nep_date_from "From", 
+		nep_date_to "To", no_of_days NoOfDays,is_approved IsApprovedID,
+		case l.is_approved when 'P' then 'Pending'
+		when 'Y' then 'Approved'
+		when 'N' then 'Rejected'
+		end IsApproved, 
+		@memid UserID,			
+		approved_remarks ApprovedRemarks,
+		(Select top 1 (firstName+' '+lastName) from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss.mmm') CreatedDate
+		from tbl_leave l
+		where sch_id=@schid
+		and l.nep_date_from<=@date and l.nep_date_to>=@date and l.is_del='N' and
+		case when @isapproved = '-1' then '1' else l.is_approved end = case when @isapproved = '-1' then '1' else @isapproved end
+		and is_del='N'
+		order by id desc;		
+		return;
+		END;
+	END
+
+END

@@ -1,0 +1,164 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_account]    Script Date: 6/20/2023 3:50:20 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_account](
+	@schid nvarchar(50) = null,
+	@flag nchar(2) = null,
+	@memid int = null,	
+	@academicyear nvarchar(50) = null,
+	@fromdate nvarchar(20) = null,
+	@todate nvarchar(20) = null,
+	@dflag nvarchar(10) = null
+)
+AS
+
+BEGIN
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid) -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'User not found' Message
+			return;
+		End
+		 
+		DECLARE @var1 nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+		
+		DECLARE @selectQuery1 nvarchar(max) = 
+		'		
+		select '+CONVERT(varchar(12), @memid)+' UserID,'+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var1+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
+		union  
+		select '+CONVERT(varchar(12), @memid)+' UserID,'+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var1+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+		';
+
+     	declare @temp as table (UserID nvarchar(50),AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(250),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temp		
+		EXEC(@selectQuery1);
+
+		select UserID,AccID,Date,Particulars,Debit,Credit from @temp;
+
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+
+	   If not exists(Select 'm' from stNamelist with(nolock) where id=@memid)  -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'User not found' Message
+			return;
+		End
+
+		-- Debit Amount Of Falgun
+		--select sum(cast(credit as float)) from tbl_account where sch_id='NJ2086' and user_id='5424' and SUBSTRING(nepali_date,1,7)='2079/11'
+
+		-- Debit Amount Of Falgun
+		--select sum(cast(debit as float)) from tbl_account where sch_id='NJ2086' and user_id='5424' and SUBSTRING(nepali_date,1,7)='2079/05'
+	
+		--select substring(nepali_date,1,7) from tbl_account where user_id=3;
+
+		DECLARE @var nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+      
+		DECLARE @selectQuery nvarchar(max) = 
+		'		
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
+		union  
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+		';
+
+     	declare @temp1 as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temp1	
+		EXEC(@selectQuery);
+
+
+		Select distinct SUBSTRING(a.Date,1,4) Year, SUBSTRING(a.Date,6,2) MonthID,
+		case SUBSTRING(a.Date,6,2) when '01' then 'Baisakh'
+		when '02' then 'Jestha'
+		when '03' then 'Asadh'
+		when '04' then 'Shrawan'
+		when '05' then 'Bhadra'
+		when '06' then 'Aswin'
+		when '07' then 'Kartik'
+		when '08' then 'Mangsir'
+		when '09' then 'Poush'
+		when '10' then 'Magh'
+		when '11' then 'Falgun'
+		when '12' then 'Chaitra'
+		end Month,	
+		0 "Day",
+		(Select cast((sum(cast(debit as float))-sum(cast(credit as float)))as float) from @temp1 b
+		where substring(b.Date,1,7)<substring(a.Date,1,7) 
+		and b.AccID=@memid) PrevBalance,
+		(Select cast((sum(cast(debit as float))-sum(cast(credit as float)))as float) from @temp1 b
+		where substring(b.Date,1,7)=substring(a.Date,1,7)
+		and b.AccID=@memid) as DebitCreditDiff,
+		(Select sum(convert(float,debit)) from @temp1 b
+		where substring(b.Date,1,7)=substring(a.Date,1,7)
+		and b.AccID=@memid) Debit,
+		(Select sum(convert(float,credit)) from @temp1 b
+		where substring(b.Date,1,7)=substring(a.Date,1,7) 
+		and b.AccID=@memid) Credit	
+		into #temptable
+		from @temp1 a 
+		where
+		a.AccID=@memid;
+		
+		Select Year,MonthID,Month,Day,
+		case when  
+		(ISNULL(PrevBalance,0))< 0 then format(ABS((ISNULL(PrevBalance,0))),'0.00')
+		else '0.00' end Advanced,
+		case when (ISNULL(PrevBalance,0)) > 0 then format(ABS((ISNULL(PrevBalance,0))),'0.00')
+		else '0.00' end Dues,
+		format(Debit,'0.00') Debit, format(Credit,'0.00') Credit,
+		format((DebitCreditDiff+ISNULL(PrevBalance,0)),'0.00') Balance,
+		@memid UserID
+		from #temptable order by MonthID asc;
+
+		drop table #temptable
+		return;
+	End
+
+	If(@flag='TS')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid) -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'User not found' Message
+			return;
+		End
+
+	
+		--select substring(nepali_date,1,7) from tbl_account where user_id=3;
+		DECLARE @var3 nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+      
+		DECLARE @selectQuery3 nvarchar(max) = 
+		'		
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
+		union  
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+			';
+
+     	declare @temp3 as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temp3	
+		EXEC(@selectQuery1);
+
+		Select (firstName+' '+lastName) FullName,SUM(cast(debit as float)) Debit,SUM(cast(credit as float)) Credit
+		from @temp3 b,stNamelist where b.AccID=stNamelist.id and  b.AccID=@memid 
+		group by (firstName+' '+lastName); 
+		return;
+	End
+END

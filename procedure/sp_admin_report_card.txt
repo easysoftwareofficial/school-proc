@@ -1,0 +1,82 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_report_card]    Script Date: 6/20/2023 9:57:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_report_card](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) =null,
+	@academicyear nvarchar(50) =null,
+	@flag nvarchar(10) =null,
+	@reporttype nchar(1) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@imgurl nvarchar(50)=null,
+	@termid int = null,
+	@isallow nvarchar(2) = null,
+	@reportid int = null
+)AS
+BEGIN
+	If(@flag='S')
+	Begin		
+		If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		END
+
+		Select r.ID ReportID, c.clName ClassName, s.secName SecName,r.user_id MemID,(u.firstName+' '+u.lastName) FullName,
+		t.examTerminal TermName,(@imgurl+'/marksheet/'+CAST(r.class_id as VARCHAR)+'/'+CAST(r.term_id AS NVARCHAR(50))+'/'+r.mark_sheet_name+'.pdf') ReportUrl
+		,r.is_allow IsAllow
+		from tbl_report_card r
+		left join stClass c on c.id=r.class_id
+		left join stSection s on s.id=r.section_id 
+		left join stNamelist u on u.id=r.user_id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+		left join msheetTerminal  t on t.id=r.term_id
+		where r.sch_id=@schid  
+		--case when @userid ='-1' then '1' else r.user_id end = case when @userid='-1' then '1' else @userid end 
+		--and r.report_type=@reporttype 
+		and r.is_del='N' and
+		case when @classid='-1' then '1' else r.class_id end=case when @classid='-1' then '1' else @classid end
+		and case when @sectionid='-1' then '1' else r.section_id end=case when @sectionid='-1' then '1' else @sectionid end
+		and r.term_id=@termid and 
+		case when @isallow='-1' then '1' else r.is_allow end = case when @isallow='-1' then '1' else @isallow end;
+
+		return;
+	ENd
+
+	If(@flag='AI')
+	Begin	
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_report_card where ID=@reportid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Report Card does not exists' Message
+			return;
+		end
+		update tbl_report_card set is_allow=@isallow, updated_by=@userid, updated_date=GETDATE()
+		where ID=@reportid and sch_id=@schid;
+		
+			Select r.ID ReportID, c.clName ClassName, s.secName SecName,r.user_id MemID,(u.firstName+' '+u.lastName) FullName,
+		t.examTerminal TermName,(@imgurl+'/marksheet/'+CAST(r.class_id as VARCHAR)+'/'+CAST(r.term_id AS NVARCHAR(50))+'/'+r.mark_sheet_name) ReportUrl
+		,r.is_allow IsAllow
+		from tbl_report_card r
+		left join stClass c on c.id=r.class_id
+		left join stSection s on s.id=r.section_id 
+		left join stNamelist u on u.id=r.user_id
+		left join msheetTerminal  t on t.id=r.term_id
+		where r.sch_id=@schid 	
+		--and r.report_type=@reporttype 
+		and r.is_del='N' and
+		case when @classid='-1' then '1' else r.class_id end=case when @classid='-1' then '1' else @classid end
+		and case when @sectionid='-1' then '1' else r.section_id end=case when @sectionid='-1' then '1' else @sectionid end
+		and r.term_id=@termid;
+		return;
+	End
+END

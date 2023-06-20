@@ -1,0 +1,248 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_report_summary]    Script Date: 6/20/2023 9:59:25 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_report_summary](
+	@schid nvarchar(50) = null,
+	@userid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@dflag nvarchar(15) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@values nvarchar(50) = null,
+	@memid int = null,
+	@imgurl nvarchar(250) = null,
+	@flag nvarchar(20) = null)
+AS
+BEGIN
+If(@dflag='ATTENDANCE')
+Begin    
+	
+	If(lower(@flag)='CLASS')
+	Begin	
+	select class_id ClassID,class_name Class,(select count(*) from tbl_attendance where SUBSTRING(nepali_date,6,2)=@values and is_del='N' and attend_status='P' and class_id=@classid) CPresentCt,(select count(*) from tbl_attendance where SUBSTRING(nepali_date,6,2)=@values and is_del='N' and attend_status='A' and class_id=@classid) CAbsentCt  from tbl_class where sch_id=@schid;
+	EnD
+
+    If(lower(@flag)='SECTION')
+	Begin	
+	select class_id ClassID,section_id SectionID,section_name Section,'40' PresentCt,'34' AbsentCt  from tbl_section where sch_id=@schid and class_id=@classid;
+	EnD
+	
+	IF(LOWER(@flag)='CLASS_SECTION')
+	BEGIN	
+	select distinct st.classID ClassID, c.clName Class,st.sectionID SectionID,s.secName Section,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='P' and a.class_id=@classid) as nvarchar(50)) CPresentCt,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='A' and a.class_id=@classid) as nvarchar(50)) CAbsentCt,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='P' and a.class_id=@classid and a.section_id=@sectionid) as nvarchar(50)) SPresentCt,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='A' and a.class_id=@classid and a.section_id=@sectionid) as nvarchar(50)) SAbsentCt 
+	from stNamelist st,stClass c,stSection s where st.classID=c.id and st.sectionID=s.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');;
+	END
+
+	
+	If(lower(@flag)='STUDENT')
+	Begin	
+	select u.classID ClassID,'One' Class,u.sectionID SectionID,'A' Section,@imgurl+'photo/user/'+u.image,id MemID,
+	gender Gender,fatherTemp Address,(u.firstName+' '+u.lastName) FullName,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='P' and a.user_id=u.id) as nvarchar(50)) AVal,
+	CAST((select count(*) from tbl_attendance a where SUBSTRING(a.nepali_date,6,2)=@values and a.is_del='N' and a.attend_status='A' and a.user_id=u.id) as nvarchar(50)) BVal  
+	from stNamelist u where  u.classID=@classid and u.sectionID=@sectionid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	EnD
+
+End
+
+If(@dflag='ACCOUNT')
+Begin    
+
+		DECLARE @var1 nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+	
+		DECLARE @selectQuery1 nvarchar(max) = 
+		'		
+		select (select st.classID from stNamelist st where st.id=stID and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear=''Yes'')) ClassID,(select st.sectionID from stNamelist st where st.id=stID and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear=''Yes'')) SectionID,id,stID AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var1+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B''
+		union  
+		select (select st.classID from stNamelist st where st.id=stID and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear=''Yes'')) ClassID,(select st.sectionID from stNamelist st where st.id=stID and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear=''Yes'')) SectionID,id,stID AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var1+' where credit>0 and remarks=''R''		
+		';
+
+     	declare @temp as table (ClassID nvarchar(50),SectionID nvarchar(50),id nvarchar(50),AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temp		
+		EXEC(@selectQuery1);
+
+	
+	If(lower(@flag)='CLASS')
+	Begin	
+	select class_id ClassID,class_name Class,(select SUM(CAST(debit as float)) from tbl_account a,tbl_user u where a.user_id=u.user_id and a.sch_id=u.sch_id and a.sch_id=@schid and u.class_id=c.class_id and SUBSTRING(a.nepali_date,6,2)=@values) DrAmt,'38884' CrAmt  from tbl_class c where sch_id=@schid;
+	EnD
+
+    If(lower(@flag)='SECTION')
+	Begin	
+	select class_id ClassID,section_id SectionID,section_name Section,'4000000' DrAmt,'38884' CrAmt  from tbl_section where sch_id=@schid and class_id=@classid;
+	EnD
+
+	IF(LOWER(@flag)='CLASS_SECTION')
+	BEGIN
+
+	--		select st.classID ClassID,c.clName Class,st.sectionID SectionID,s.secName Section,convert(nvarchar(50),isnull(sum(cast(a.debit as money)),0)) as SDrAmt,convert(nvarchar(50),isnull(sum(cast(a.credit as money)),0)) SCrAmt from @temp a, stNamelist st,stClass c,stSection s where a.accid=st.id and
+	--    st.classID=c.id and st.sectionID=s.id and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and SUBSTRING(a.Date,6,2)=@values group by st.classID,c.clName,st.sectionID,s.secName,c.id order by c.id
+
+	--	select distinct st.classID ClassID, c.clName Class,st.sectionID SectionID,s.secName Section,
+	--	'0' CDrAmt,
+	--	'0' CCrAmt,
+	--	CAST((select SUM(CAST(credit as float)) from @temp a where a.AccID=st.id and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) SCrAmt,
+	--CAST((select SUM(CAST(debit as float)) from @temp a where a.AccID=st.id  and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50))  SDrAmt
+	--  from stNamelist st,stClass c,stSection s where
+	--   st.classID=c.id and st.sectionID=s.id and st.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+
+	declare @vartemp as table (ClassID int,SectionID int,Class nvarchar(50),Section nvarchar(50))
+	
+	INSERT
+	into 
+	@vartemp
+	select distinct 
+	st.classID ClassID,st.sectionID SectionID,	
+	 (select c.clName from stclass c where c.id=st.classID and c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and c.clName is not null) Class,
+	 (select s.secName from stSection s where s.id=st.sectionID and s.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and s.secName is not null) Section
+	from stNamelist st  where st.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') 
+	
+	select 
+	ClassID,SectionID,Class,Section,
+		'0' CDrAmt,
+		'0' CCrAmt,
+		ISNULL(CAST((select SUM(CAST(credit as float)) from @temp a where a.classID=st.ClassID and a.SectionID=st.SectionID  and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)),'0') SCrAmt,
+		ISNULL(CAST((select SUM(CAST(debit as float)) from @temp a where a.classID=st.ClassID and a.SectionID=st.SectionID and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)),'0') SDrAmt
+	from @vartemp st
+	return;
+	--select 
+	--from #temp;
+	--select distinct 
+	--st.classID ClassID, (select c.clName from stclass c where c.id=st.classID and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) Class,	
+	--st.sectionID SectionID,(select s.secName from stSection s where s.id=st.sectionID and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) Section,
+	--	'0' CDrAmt,
+	--	'0' CCrAmt,
+	--	CAST((select SUM(CAST(credit as money)) from @temp a where a.classID=st.classID and a.SectionID=st.sectionID and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) SCrAmt,
+	--	CAST((select SUM(CAST(debit as money)) from @temp a where a.classID=st.classID and a.SectionID=st.sectionID and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) SDrAmt
+	--  from stNamelist st where st.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	END
+	--	CAST((select SUM(CAST(credit as float)) from @temp a where a.AccID=st.id and  and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) SCrAmt,
+	--CAST((select SUM(CAST(debit as float)) from @temp a where a.AccID=st.id  and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50))  SDrAmt
+	If(lower(@flag)='STUDENT')
+	Begin	
+
+	select u.classID ClassID,'One' Class,u.sectionID SectionID,'A' Section,@imgurl+'photo/user/'+u.image,id MemID,
+	gender Gender,fatherTemp Address,CAST(u.rNo as nvarchar(50))+'. '+(u.firstName+' '+u.lastName) FullName,
+	CAST((select SUM(CAST(credit as float)) from @temp a where a.AccID=u.id and  u.classID=@classid  and u.sectionID=@sectionid and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) AVal,
+	CAST((select SUM(CAST(debit as float)) from @temp a where a.AccID=u.id  and u.classID=@classid  and u.sectionID=@sectionid and SUBSTRING(a.Date,6,2)=@values) as NVARCHAR(50)) BVal
+	from stNamelist u where  u.classID=@classid and u.sectionID=@sectionid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') order by rno;
+
+	EnD
+
+End
+
+If(@dflag='ONLINECLASS')
+Begin    
+	
+	If(lower(@flag)='CLASS')
+	Begin	
+	select class_id ClassID,class_name Class,'10' NoOfClass  from tbl_class where sch_id=@schid;
+	EnD
+
+    If(lower(@flag)='SECTION')
+	Begin	
+	select class_id ClassID,section_id SectionID,section_name Section,'12' NoOfClas from tbl_section where sch_id=@schid and class_id=@classid;
+	EnD
+
+	IF(LOWER(@flag)='CLASS_SECTION')
+	BEGIN
+
+	select distinct st.classID ClassID, c.clName Class,st.sectionID SectionID,s.secName Section,
+		'20' CNoOfClass,
+	CAST((select count(*) from tbl_online_class o where o.sch_id=@schid and o.class_id=c.id and o.section_id=s.id and o.class_id=c.id and o.section_id=s.id) as nvarchar(60)) SNoOfClass 
+	  from stNamelist st,stClass c,stSection s where st.classID=c.id and st.sectionID=s.id  and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	END
+	
+	If(lower(@flag)='STUDENT')
+	Begin	
+	select class_id ClassID,'One' Class,section_id SectionID,'A' Section,@imgurl+'photo/user/'+user_image Image,user_id MemID,
+	'Male' Gender,'Kalimati' Address,full_name FullName,'4000000' AVal,'38884' BVal from tbl_user where sch_id=@schid and class_id=@classid and section_id=@sectionid;
+	EnD
+
+End
+
+If(@dflag='LeaveNote')
+Begin    
+	
+	If(lower(@flag)='CLASS')
+	Begin	
+	select class_id ClassID,class_name Class,'10' NoOfLeave  from tbl_class where sch_id=@schid;
+	EnD
+
+    If(lower(@flag)='SECTION')
+	Begin	
+	select class_id ClassID,section_id SectionID,section_name Section,'12' NoOfLeave from tbl_section where sch_id=@schid and class_id=@classid;
+	EnD
+
+	IF(LOWER(@flag)='CLASS_SECTION')
+	BEGIN
+	
+	select distinct st.classID ClassID, c.clName Class,st.sectionID SectionID,s.secName Section,
+		'20' CNoOfLeave,
+	CAST((select count(*) from tbl_leave a where a.user_id=st.id and a.sch_id=@schid and st.classID=c.id and st.sectionID=s.id and (SUBSTRING(a.nep_date_from,6,2)>=@values and SUBSTRING(a.nep_date_from,6,2)<=@values)) as NVARCHAR(50)) SNoOfLeave 
+	  from stNamelist st,stClass c,stSection s where st.classID=c.id and st.sectionID=s.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	
+	END
+
+	If(lower(@flag)='STUDENT')
+	Begin	
+
+	select u.classID ClassID,'One' Class,u.sectionID SectionID,'A' Section,@imgurl+'photo/user/'+u.image,id MemID,
+	gender Gender,fatherTemp Address,(u.firstName+' '+u.lastName) FullName,
+	CAST((select count(*) from tbl_leave a where a.user_id=u.id  and a.sch_id=@schid and (SUBSTRING(a.nep_date_from,6,2)>=@values and SUBSTRING(a.nep_date_from,6,2)<=@values)) as NVARCHAR(50)) AVal,
+	'' BVal
+	from stNamelist u where  u.classID=@classid and u.sectionID=@sectionid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');;
+
+
+	EnD
+
+End
+
+If(@dflag='Notification')
+Begin    
+	
+	If(lower(@flag)='CLASS')
+	Begin	
+	select class_id ClassID,class_name Class,'10' NoOfNot  from tbl_class where sch_id=@schid;
+	EnD
+
+    If(lower(@flag)='SECTION')
+	Begin	
+	select class_id ClassID,section_id SectionID,section_name Section,'12' NoOfNot from tbl_section where sch_id=@schid and class_id=@classid;
+	EnD
+	
+	IF(LOWER(@flag)='CLASS_SECTION')
+	BEGIN
+
+		select distinct st.classID ClassID, c.clName Class,st.sectionID SectionID,s.secName Section,
+	   '20' CNoOfNot,
+	   CAST((select count(*) from tbl_notification n where n.is_del='N' and  n.class_id=c.id and n.section_id=s.id and n.user_id is null and n.sch_id=@schid) as nvarchar(250)) SNoOfNot 
+	  from stNamelist st,stClass c,stSection s where st.classID=c.id and st.sectionID=s.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+	
+
+	END
+
+	If(lower(@flag)='STUDENT')
+	Begin	
+
+	select u.classID ClassID,'One' Class,u.sectionID SectionID,'A' Section,@imgurl+'photo/user/'+u.image,id MemID,
+	gender Gender,fatherTemp Address,(u.firstName+' '+u.lastName) FullName,
+	CAST((select count(*) from tbl_notification n where n.user_id=u.id and n.is_del='N') as nvarchar(50)) AVal,
+	'' BVal 
+	from stNamelist u where  u.classID=@classid and u.sectionID=@sectionid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes');
+
+	EnD
+
+End
+END

@@ -1,0 +1,83 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_course_plan]    Script Date: 6/20/2023 4:53:25 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_course_plan](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nchar(2) = null,
+	@courseplanid int = null,
+	@chaptid int = null,
+	@title nvarchar(250) = null,	
+	@duration nvarchar(50) = null,
+	@description nvarchar(500) = null,
+	@isactive nchar(2) = null
+)AS
+Begin
+ 
+ IF(@flag='i')
+ BEGIN
+ if not exists(select 'M' from tbl_course_chapter where sch_id=@schid and id=@chaptid)
+ BEGIN
+ select 201 StatusCode,'Chapter does not exists.' Message;
+ return;
+ END;
+ insert into tbl_course_plan(sch_id,user_id,chapter_id,duration_hour,title,description,is_active,created_by,updated_by,created_date,updated_date,is_del)
+ values(@schid,@userid,@chaptid,@duration,@title,@description,'A',@userid,@userid,GETDATE(),GETDATE(),'N');
+  select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+ IF(@flag='S')
+ BEGIN
+  select id CoursePlanID,chapter_id ChapterID,'23213 232' ChapterTitle,title Title,description Description,duration_hour Duration,is_active IsActive from tbl_course_plan where sch_id=@schid 
+   and chapter_id=@chaptid and is_del='N';
+ return;
+ END
+
+  IF(@flag='U')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_plan where sch_id=@schid and id=@courseplanid)
+ BEGIN
+ select 201 StatusCode,'Course does not exists.' Message;
+ return;
+ END;
+ update tbl_course_plan set title=@title,description=@description,duration_hour=@duration,updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@chaptid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+  IF(@flag='AI')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_plan where sch_id=@schid and id=@courseplanid)
+ BEGIN
+ select 201 StatusCode,'Course does not exists.' Message;
+ return;
+ END;
+ update tbl_course_plan set is_active=@isactive,updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@courseplanid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+  IF(@flag='R')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_plan where sch_id=@schid and id=@courseplanid)
+ BEGIN
+ select 201 StatusCode,'Course does not exists.' Message;
+ return;
+ END;
+ update tbl_course_plan set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@courseplanid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+End

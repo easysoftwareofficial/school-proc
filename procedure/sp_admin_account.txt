@@ -1,0 +1,152 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_account]    Script Date: 6/20/2023 3:49:24 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_account](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@academicyear nvarchar(250) = null,
+	@flag nchar(2) = null,
+	@memid int = null,
+	@fromdate nvarchar(20) = null,
+	@todate nvarchar(20) = null,
+	@classid int = null,
+	@sectionid int = null
+)AS
+Begin
+	If(@flag='R')
+	Begin		
+			If not exists(Select 'm' from stNamelist with(nolock) where id=@memid) -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'Student does not exists' Message
+			return;
+		End
+
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid) and @userid<>-1 -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		DECLARE @var1 nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+      
+		DECLARE @selectQuery1 nvarchar(max) = 
+		'		
+		select stID AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var1+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B''
+		union  
+		select stID AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var1+' where credit>0 and remarks=''R''		
+		';
+
+     	declare @temp as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temp		
+		EXEC(@selectQuery1);
+
+
+		Select  AccID, Date, Particulars, Debit, Credit
+		from @temp a where 
+		case when @memid = '-1' then '1' else AccID end = case when @memid='-1' then '1' else @memid end
+		and a.Date>=@fromdate and a.Date<=@todate;
+		return;
+
+		drop table #temp;
+	End
+
+	If(@flag='S')
+	Begin
+			
+
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid) and @userid<>-1 -- and del_flag='N'
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+		--select * from tbl_account;
+
+		DECLARE @var nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+      
+		DECLARE @selectQuery nvarchar(max) = 
+		'		
+		select stID AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B''
+		union  
+		select stID AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var+' where credit>0 and remarks=''R''		
+		';
+
+     	declare @tempp as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@tempp		
+		EXEC(@selectQuery);
+
+		if(@userid='-1')
+		BEGIN
+		Select (u.firstName+' '+u.lastName) Student, sum(convert(float,a.debit)) Debit, 
+		sum(convert(float,a.credit)) Credit
+		from @tempp a
+		left join stnamelist u on u.id=a.AccID and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+		and case when @classid = '-1' then '1' else u.classID end = case when @classid='-1' then '1' else @classid end
+		and case when @sectionid = '-1' then '1' else u.sectionID end = case when @sectionid='-1' then '1' else @sectionid end and u.id is not null
+		and a.Date>=@fromdate and a.Date<=@todate
+		where (u.firstName+' '+u.lastName) is not null
+		group by (u.firstName+' '+u.lastName);
+		END
+		ELSE
+		BEGIN
+		if exists (select 'M' from stNamelist where id=@userid)
+		BEGIN
+		Select (u.firstName+' '+u.lastName) Student, sum(convert(float,a.debit)) Debit, 
+		sum(convert(float,a.credit)) Credit
+		from @tempp a
+		left join stNamelist u on u.id=a.AccID and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+		where 
+		a.AccID=@userid and (u.firstName+' '+u.lastName) is not null		
+		group by (u.firstName+' '+u.lastName);
+		return;
+		END
+		ELSE
+		BEGIN
+		select '' Student,'0.00' Debit,'0' Credit;
+		END;
+		drop table #temp;
+		END;
+	ENd
+
+	If(@flag='RD')
+	Begin
+		
+
+		DECLARE @var2 nvarchar(max)=(select top 1 TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' and TABLE_NAME like 'feeMainTBL%' order by TABLE_NAME desc)
+		
+      
+		DECLARE @selectQuery2 nvarchar(max) = 
+		'		
+		select stID AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var2+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B''
+		union  
+		select stID AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var2+' where credit>0 and remarks=''R''		
+		';
+
+     	declare @temppp as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+
+		INSERT		
+		INTO
+		@temppp		
+		EXEC(@selectQuery2);
+
+		Select a.AccID AccID,(firstName+' '+lastName) FullName,Date NepaliDate,particulars Particulars,credit Credit
+		from @temppp a,stNamelist u
+		where a.AccID=u.id and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and  (u.firstName+' '+u.lastName) is not null and
+		--case when @userid = '-1' then '1' else a.created_by end = case when @userid='-1' then '1' else @userid end and
+		a.Date=@fromdate
+		return;
+
+    END
+End

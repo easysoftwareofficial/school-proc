@@ -1,0 +1,140 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_attendance_report]    Script Date: 6/20/2023 4:46:31 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_attendance_report](    
+	@flag nvarchar(5),
+	@schid nvarchar(250)=null,	
+	@value nvarchar(50)=null,
+	@attenstatus nchar(1) = null,
+	@dflag nvarchar(10)=null,
+	@userid int = null,	
+	@attendate nvarchar(50)=null,
+	@converteddate nvarchar(50)=null
+)AS
+BEGIN
+	If not (@flag='D' or @flag='M' or @flag='ULS')
+	Begin
+		Select 203 StatusCode, 'Flag does not exists' Message
+		return;
+	End
+	--select * from tbl_teacher_attendance
+	IF(@flag='D')
+	Begin
+
+	if(@userid='-1')
+	BEGIN
+		Select @value Atten,id ID into #workdate from stNamelist where appType!='Student'	
+		
+		If(@dflag='N')
+		Begin
+			Select distinct(Atten) AttenDate, w.ID UserID, (u.firstName+' '+u.lastName) StaffName,
+			substring(convert(nvarchar(20),a.attend_date),9,10) AttenDay, ISNULL(a.checkin_time,'No Check In') CheckIn, ISNULL(a.checkout_time,'No Check Out') CheckOut,			
+			case a.check_in_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckInVia,
+			case a.check_out_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckOutVia,
+			case a.check_in_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckInPlace,
+			case a.check_out_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckOutPlace,			
+			case a.attend_verified when 'Y' then 'Verified' 
+			else 'Unverified'
+			end IsVerified,
+			(Select (u.firstName+' '+u.lastName) from stNamelist u where u.id=a.verified_by) VerifiedBy			
+			from #workdate w
+			left join tbl_teacher_attendance a on w.ID= a.user_id  and a.sch_id=@schid 
+			and atten_nep_date=@value
+			and a.is_del='N'
+			left join stNamelist u on w.ID = u.id
+			--left join tbl_leave l on l.user_id = a.user_id and l.com_id=@comid and l.status=1	
+			order by AttenDate desc
+		End
+		drop table #workdate
+		return;
+    END;
+	
+	
+		if(@userid!='-1')
+	BEGIN	
+		 Select ISNULL(checkin_time,'No Checkin') CheckIn,ISNULL(checkout_time,'No Checkout') CheckOut from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and atten_nep_date=@value
+		return;
+    END;
+
+	End
+
+	
+	If(@flag='M')
+	Begin
+
+	if(@userid='-1')
+	BEGIN
+		Select distinct(attend_date), atten_nep_date into #workingday from tbl_teacher_attendance 
+		where case LOWER(@dflag) when 'e' then  substring(attend_date,1,7)
+		when 'n' then substring(atten_nep_date,1,7) end
+		=@value and sch_id=@schid
+		
+		If(@dflag='N')
+		Begin
+			
+			Select 
+			(u.firstName+' '+u.lastName) StaffName,
+			a.ID AttenID,substring(w.atten_nep_date,1,4)+'/'+substring(w.atten_nep_date,6,2)+'/'+substring(w.atten_nep_date,9,2) AttenDate, substring(w.atten_nep_date,9,2) AttenDay,
+			ISNULL(a.checkin_time,'No Check In') CheckIn, ISNULL(a.checkout_time,'No Check Out') CheckOut,
+			case a.check_in_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckInVia,
+			case a.check_out_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckOutVia,
+			case a.check_in_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckInPlace,
+			case a.check_out_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckOutPlace,
+			case a.attend_verified when 'Y' then 'Verified' 
+			else 'Unverified'
+			end IsVerified,
+			(Select (u.firstName+' '+u.lastName) from stNamelist u where id=a.verified_by) VerifiedBy,
+			'0' LeaveID
+			from #workingday w
+			left join tbl_teacher_attendance a on w.atten_nep_date=a.atten_nep_date and a.is_del='N' and a.sch_id=@schid
+			left join stNamelist u on u.id=a.user_id;		
+		End
+		drop table #workingday
+
+
+		return;
+		END;
+
+	    Select distinct(attend_date), atten_nep_date into #workingdays from tbl_teacher_attendance
+		where case LOWER(@dflag) when 'e' then  substring(attend_date,1,7)
+		when 'n' then substring(atten_nep_date,1,7) end
+		=@value and sch_id=@schid
+
+		Select a.ID AttenID,substring(w.atten_nep_date,1,4)+'/'+substring(w.atten_nep_date,6,2)+'/'+substring(w.atten_nep_date,9,2) AttenDate, substring(w.atten_nep_date,9,2) AttenDay,
+			ISNULL(a.checkin_time,'No Check In') CheckIn, ISNULL(a.checkout_time,'No Check Out') CheckOut,
+			case a.check_in_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckInVia,
+			case a.check_out_via when 'M' then 'Manual' when 'D' then 'Device' when 'Q' then 'QR'
+			end CheckOutVia,
+			case a.check_in_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckInPlace,
+			case a.check_out_place when 'O' then 'Office' when 'H' then 'Home'
+			end CheckOutPlace,
+			case a.attend_verified when 'Y' then 'Verified' 
+			else 'Unverified'
+			end IsVerified,
+			(Select (u.firstName+' '+u.lastName) from stNamelist where id=a.verified_by) VerifiedBy,
+			'0' LeaveID
+			from #workingdays w
+			left join tbl_teacher_attendance a on w.atten_nep_date=a.atten_nep_date and a.is_del='N' and a.sch_id=@schid and a.user_id=@userid
+			left join stNamelist u on u.id=a.user_id and u.del_flag='N' and u.id=@userid;
+
+				drop table #workingdays
+
+
+
+	End
+
+END

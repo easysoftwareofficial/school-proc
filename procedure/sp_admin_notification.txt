@@ -1,0 +1,292 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_notification]    Script Date: 6/20/2023 9:52:19 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_notification](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@classid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@sectionid xml = null,
+	@memid xml = null,
+	@section int = null,
+	@mem nvarchar(50) = null,
+	@usertype nvarchar(50) = null,
+	@title nvarchar(500) = null,
+	@description nvarchar(4000) = null,
+	@attachment nvarchar(50) = null,
+	@attachmenttype nvarchar(50) = null,
+	@notificationid int = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	
+	If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>'-1'
+	Begin
+		Select 202 StatusCode, 'UserID does not exists' Message
+		return;
+	ENd
+	If(@flag='i')
+	Begin
+		If exists(Select 'm' from @memid.nodes('/ArrayOfMemIDLst/MemIDLst') Node(Data)) 
+		Begin
+			Insert into tbl_notification(sch_id,created_by,updated_by,
+			user_type,title,description,attachment,attach_type,not_date,
+			created_date,updated_date,is_del,class_id,user_id)
+			(Select
+			@schid,@userid,@userid,@usertype,@title,@description,
+			@attachment,@attachmenttype,format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),'N',
+			@classid,
+			user_id=Node.Data.value('(MemID)[1]','INT')
+			from @memid.nodes('/ArrayOfMemIDLst/MemIDLst') Node(Data))
+		
+			Select 200 StatusCode, 'Success' Message, notification_token NotificationToken,
+			@title Title,
+			@description Description
+			from stNamelist u			
+			where u.id=any (Select Node.Data.value('(MemID)[1]','INT')
+			from @memid.nodes('/ArrayOfMemIDLst/MemIDLst') Node(Data))
+			--section_id=any (Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionids.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) 
+	
+			return;
+		End
+
+		If exists(Select 'm' from @sectionid.nodes('/ArrayOfSectionIDLst/SectionIDLst') Node(Data))
+		Begin
+			Insert into tbl_notification(sch_id,created_by,updated_by,
+			user_type,title,description,attachment,attach_type,not_date,
+			created_date,updated_date,is_del,class_id,section_id)
+			(Select
+			@schid,@userid,@userid,@usertype,@title,@description,
+			@attachment,@attachmenttype,format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),'N',
+			@classid,
+			section_id=Node.Data.value('(SectionID)[1]','INT')
+			from @sectionid.nodes('/ArrayOfSectionIDLst/SectionIDLst') Node(Data))
+		
+			Select 200 StatusCode, 'Success' Message, notification_token NotificationToken,
+			@title Title,
+			@description Description
+			from stNamelist u
+			where classID=@classid and 
+			 sectionID = any (Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data))
+			return;
+		End
+
+		if(@classid!=0)
+		begin
+		Insert into tbl_notification(sch_id,created_by,updated_by,
+		user_type,title,description,attachment,attach_type,not_date,
+		created_date,updated_date,is_del,class_id)
+		values
+		(@schid,@userid,@userid,@usertype,@title,@description,
+		@attachment,@attachmenttype,format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),'N',
+		@classid)
+
+		Select 200 StatusCode, 'Success' Message, notification_token NotificationToken,
+		@title Title,
+		@description Description
+		from stNamelist u			
+		where classID=@classid		
+		return;
+		end
+
+		--select * from tbl_notification;
+
+		if(@classid='0')
+		begin
+
+	
+
+		if(@usertype='-1')
+		BEGIN
+
+		Insert into tbl_notification(sch_id,created_by,updated_by,
+		title,description,attachment,attach_type,not_date,
+		created_date,updated_date,is_del,class_id)
+		values
+		(@schid,@userid,@userid,@title,@description,
+		@attachment,@attachmenttype,format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),'N',
+		null);
+
+		Select 
+		notification_token NotificationToken,
+		@title Title,
+		@description Description
+		from stNamelist u			
+		return;
+		END
+
+		Insert into tbl_notification(sch_id,created_by,updated_by,
+		user_type,title,description,attachment,attach_type,not_date,
+		created_date,updated_date,is_del,class_id)
+		values
+		(@schid,@userid,@userid,@usertype,@title,@description,
+		@attachment,@attachmenttype,format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'),'N',
+		null);
+
+	      Select 
+		notification_token NotificationToken,
+		@title Title,
+		@description Description
+		from stNamelist u			
+		where appType=@usertype;
+
+		end
+		
+	End
+
+	If (@flag='U')
+	Begin
+		If not exists(Select 'm' from tbl_notification with(nolock) where ID=@notificationid and sch_id=@schid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'NotificationID does not exists' Message
+			return;
+		End
+		Update tbl_notification set updated_by=@userid, updated_date=format(convert(datetime,GETDATE()),'yyyy-MM-dd hh:mm:ss tt'), title=@title,
+		description=@description
+		where sch_id=@schid and ID=@notificationid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+
+	-- ALL
+	if(@classid='-1' and @section='-1' and @mem='-1' and @usertype='-1')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.class_id is null and n.section_id is null and n.user_id is null and n.user_type is null and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+	 -- CLASS WISE
+	 if(@classid!='-1' and @section='-1' and @mem='-1' and @usertype='S')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id is null and n.user_id is null and n.user_type='Student' and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+	 -- SECTION WISE
+	  if(@classid!='-1' and @section!='-1' and @mem='-1' and @usertype='S')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id=@section and n.user_id is null and n.user_type='Student' and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+	  -- INDIVD WISE
+	  if(@classid!='-1' and @section!='-1' and @mem!='-1' and @usertype='S')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Student' and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+	   -- MEMID WISE
+	  if(@classid!='-1' and @section!='-1' and @mem!='-1' and @usertype='A')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Admin' and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+	   if(@classid!='-1' and @section!='-1' and @mem!='-1' and @usertype='T')
+	begin	
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Teacher' and n.created_by=u.id and 
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
+		return;
+	 end;
+
+		----ALL
+		--if(@classid='-1' and @section='-1' and @mem='-1' and @usertype='-1')
+		--BEGIN
+		--Select ID NotificationID, title Title, description Description, 
+		--@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		--FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,full_name FullName,@imgurl+'photo/user/'+user_image UserImage
+		--from tbl_notification n,tbl_user u
+		--where n.sch_id=@schid and is_del='N' and n.created_by=u.user_id 
+		--and u.class_id is null and u.section_id is null and u.user_id is null and u.user_type is null;
+		--return;
+		--END
+
+		---- CLASS WISE
+  --      if(@classid!=-1 and @section=-1 and @mem=-1 and @usertype='S')
+		--BEGIN
+		--Select ID NotificationID, title Title, description Description, 
+		--@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		--FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,full_name FullName,@imgurl+'photo/user/'+user_image UserImage
+		--from tbl_notification n,tbl_user u
+		--where n.sch_id=@schid and is_del='N' and n.created_by=u.user_id and
+		--u.class_id=@classid and u.section_id is null and u.user_id is null and u.user_type='S';
+		--return;
+		--END
+
+		---- CLASS WISE
+  --      if(@classid!='-1' and @section!='-1' and @mem='-1' and @usertype='S')
+		--BEGIN
+		--Select ID NotificationID, title Title, description Description, 
+		--@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		--FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,full_name FullName,@imgurl+'photo/user/'+user_image UserImage
+		--from tbl_notification n,tbl_user u
+		--where n.sch_id=@schid and is_del='N' and n.created_by=u.user_id and
+		--u.class_id=@classid and u.section_id=@section and u.user_id is null and u.user_type='S';
+		--return;
+		--END
+
+		Select n.ID NotificationID, title Title, description Description, 
+		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
+		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
+		from tbl_notification n,stNamelist u
+		where n.sch_id=@schid and is_del='N' and n.created_by=u.id and
+		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end 
+		and case when @classid='-1' then'1' else n.class_id end=case when @classid='-1' then '1' else @classid end 
+		and case when @section='-1' or @section is null then '1' else n.section_id end=case when @section='-1' then '1' else @section end
+		and case when @mem is null or @mem ='-1' then '1' else n.user_id end=case when @mem is null or @mem ='-1' then '1' else @mem end 
+		and case when @usertype is null or @usertype ='' then '1' else n.user_type end=case when @usertype is null or @usertype ='' then '1' else @usertype end
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from tbl_notification with(nolock) where ID=@notificationid and sch_id=@schid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'NotificationID does not exists' Message
+			return;
+		End
+		Update tbl_notification set is_del='Y', updated_by=@userid, updated_date=format(convert(datetime,GETDATE()),'yyyy-MM-dd')
+		where sch_id=@schid and ID=@notificationid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+END

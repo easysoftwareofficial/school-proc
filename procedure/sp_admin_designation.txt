@@ -1,0 +1,105 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_designation]    Script Date: 6/20/2023 4:57:28 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_designation](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@designation nvarchar(250) = null,
+	@order int= null,
+	@flag nvarchar(10) = null,
+	@designationid int = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+
+		If exists(Select 'm' from tbl_designation where sch_id=@schid and orders=@order and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Orders already exists' Message
+			return;
+		End
+
+		If exists(Select 'm' from tbl_designation where sch_id=@schid and designation=@designation and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Designation already exists' Message
+			return;
+		End
+
+		Insert into tbl_designation(sch_id,created_by,updated_by,created_date, updated_date,
+		designation,orders,is_del) values
+		(@schid,@userid,@userid,GETDATE(),GETDATE(),@designation,@order,'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_designation where sch_id=@schid and ID=@designationid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'DesignationID does not exists' Message
+			return;
+		ENd
+		If exists(Select 'm' from tbl_designation where sch_id=@schid and ID<>@designationid and designation=@designation)
+		Begin
+			Select 204 StatusCode, 'Designation already exists' Message
+			return;
+		End
+		Update tbl_designation set updated_by=@userid,updated_date=GETDATE(),designation=@designation,
+		orders=@order 
+		where sch_id=@schid and ID=@designationid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+	
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+
+	
+		Select ID DesignationID, designation Designation, orders "Order",
+		(Select count(1) from tbl_user_designation where designation_id=d.ID and sch_id=d.sch_id and is_del='N') NoOfStaff
+		from tbl_designation d
+		where sch_id=@schid and 
+		case when @userid='-1' then '1' else created_by end= case when @userid='-1' then '1' else @userid end
+		and d.is_del='N'
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_designation where sch_id=@schid and ID=@designationid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'DesignationID does not exists' Message
+			return;
+		ENd
+		Update tbl_designation set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+		where sch_id=@schid and ID=@designationid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END
+

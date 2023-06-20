@@ -1,0 +1,67 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_slider]    Script Date: 6/20/2023 9:59:41 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_slider](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@flag nvarchar(10) = null,
+	@title nvarchar(50) = null,
+	@redurl nvarchar(250) = null,
+	@order int =null,
+	@image nvarchar(250) = null,
+	@sliderid int = null,
+	@imgurl nvarchar(100) = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		end
+		Insert into tbl_slider(sch_id,file_src,file_name,file_url,"order",created_by,
+		updated_by,created_date,updated_date,is_del) values
+		(@schid,@image,@title,@redurl,@order,@userid,@userid,
+		GETDATE(),GETDATE(),'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+	
+		If not exists(Select 'm' from tbl_slider where ID=@sliderid and is_del='N')
+		Begin
+			Select 202 StatusCode, 'Slider does not exists' Message
+			return;
+		end
+		Update tbl_slider set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@sliderid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+	
+	If(@flag='S')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		end
+		Select ID SliderID, file_name Title, file_url RedUrl, "order" "Order",
+		(@imgurl+'photo/slider/' + file_src) Image 
+		from tbl_slider
+		where sch_id=case when @schid='-1' then 'Easy' else @schid end
+		and case when @userid='-1' then '1' else created_by end = case when @userid='-1' then '1' else @userid end
+		and is_del='N'
+		return;
+	End
+END

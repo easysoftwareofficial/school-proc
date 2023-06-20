@@ -1,0 +1,84 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_course_chapter]    Script Date: 6/20/2023 4:52:39 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_course_chapter](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nchar(2) = null,
+	@classid int = null,
+	@subjectid int = null,
+	@chaptid int = null,
+	@chaptno nvarchar(20) = null,
+	@chapttitle nvarchar(250) = null,
+	@learningobj nvarchar(500) = null,
+	@isactive nchar(2) = null
+)AS
+Begin
+ 
+ IF(@flag='i')
+ BEGIN
+ if exists(select 'M' from tbl_course_chapter where sch_id=@schid and class_id=@classid and subject_id=@subjectid and chapter_no=@chaptno)
+ BEGIN
+ select 201 StatusCode,'Chapter no already exists.' Message;
+ return;
+ END;
+ insert into tbl_course_chapter(sch_id,user_id,class_id,subject_id,chapter_no,chapter_title,learning_objective,is_active,created_by,updated_by,created_date,updated_date,is_del)
+ values(@schid,@userid,@classid,@subjectid,@chaptno,@chapttitle,@learningobj,'A',@userid,@userid,GETDATE(),GETDATE(),'N');
+  select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+ IF(@flag='S')
+ BEGIN
+  select id ChapterID,class_id ClassID,subject_id SubjectID,chapter_no ChapterNo,chapter_title ChapterTitle,learning_objective LearningObj,'23 Hour' ChapterDuration,is_active IsActive from tbl_course_chapter where sch_id=@schid and class_id=@classid and subject_id=@subjectid
+   and is_del='N';
+ return;
+ END
+
+  IF(@flag='U')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_chapter where sch_id=@schid and id=@chaptid)
+ BEGIN
+ select 201 StatusCode,'Chapter does not exists.' Message;
+ return;
+ END;
+ update tbl_course_chapter set class_id=@classid,subject_id=@subjectid,updated_by=@userid,updated_date=GETDATE(),chapter_no=@chaptno,chapter_title=@chapttitle,learning_objective=@learningobj
+ where sch_id=@schid and id=@chaptid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+  IF(@flag='AI')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_chapter where sch_id=@schid and id=@chaptid)
+ BEGIN
+ select 201 StatusCode,'Chapter does not exists.' Message;
+ return;
+ END;
+ update tbl_course_chapter set is_active=@isactive,updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@chaptid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+  IF(@flag='R')
+ BEGIN
+
+  if not exists(select 'M' from tbl_course_chapter where sch_id=@schid and id=@chaptid)
+ BEGIN
+ select 201 StatusCode,'Chapter does not exists.' Message;
+ return;
+ END;
+ update tbl_course_chapter set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@chaptid;
+ select 200 StatusCode,'Success' Message;
+ return;
+ END
+
+End

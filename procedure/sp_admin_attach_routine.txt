@@ -1,0 +1,92 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_attach_routine]    Script Date: 6/20/2023 4:12:11 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_admin_attach_routine](
+	@schid nvarchar(50) = null,
+	@flag nchar(2) = null,
+	@userid int = null,
+	@classid int = null,
+	@sectionid int = null,
+	@termid int = null,
+	@routineid int = null,
+	@routtype nvarchar(4) = null,
+	@attachment nvarchar(250) = null,
+	@imgurl nvarchar(250) = null
+)
+AS
+BEGIN
+	If(@flag='i')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		If  exists(Select 'm' from tbl_attach_routine where sch_id=@schid and class_id=@classid and section_id=@sectionid and @routtype='C' and is_del='N') and @routtype='C'
+		Begin
+			Select 203 StatusCode, 'Class Routine already exist' Message
+			return;
+		End
+
+		If  exists(Select 'm' from tbl_attach_routine where sch_id=@schid and class_id=@classid and term_id=@termid and @routtype='E' and is_del='N') and @routtype='C'
+		Begin
+			Select 203 StatusCode, 'Class Routine already exist' Message
+			return;
+		End
+
+		insert into tbl_attach_routine(sch_id,user_id,class_id,section_id,term_id,rout_type,attach,created_date,updated_date,is_del) 
+		values (@schid,@userid,@classid,@sectionid,@termid,@routtype,@attachment,GETDATE(),GETDATE(),'N');		
+			Select 200 StatusCode, 'Success.' Message;
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+
+	 if(@routtype='C')
+	 BEGIN
+	select RT.ID RoutineID,
+	clName Class,secName Section,@imgurl+'document/'+attach Attachment 
+	from tbl_attach_routine rt
+	left join stClass c on c.id=rt.class_id
+	left join stSection s on s.id=rt.section_id
+	where rout_type='C' and sch_id=@schid and is_del='N'
+	return;
+	END;
+
+	 if(@routtype='E')
+	 BEGIN
+	select ID RoutineID,'One' Class,'First Terminal Exam' Term,@imgurl+'document/'+attach Attachment from tbl_attach_routine where rout_type='E' and sch_id=@schid and is_del='N'
+	return;
+	END;
+
+	END
+	If(@flag='R')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		If not exists(Select 'm' from tbl_attach_routine where sch_id=@schid and id=@routineid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Routine doesnot exist.' Message
+			return;
+		End
+	
+	update tbl_attach_routine set is_del='Y',updated_date=GETDATE() where sch_id=@schid and id=@routineid;
+	Select 200 StatusCode, 'Success.' Message;
+		return;
+	End
+
+	
+END

@@ -1,0 +1,156 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_online_class]    Script Date: 6/20/2023 9:53:36 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_online_class](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@subjectid int =  null,
+	@teacherid int = null,
+	@tool nchar(1) = null,
+	@meetingid nvarchar(50) = null,
+	@meetingpwd nvarchar(50) = null,
+	@meetingurl nvarchar(250) = null,
+	@isactive nchar(1) = null,
+	@onlineclassid int = null,
+	@isautoattendance nchar(1) = null,
+	@todaynepdate nvarchar(50) = null,
+	@isnotify nvarchar(10) = null
+)AS
+
+BEGIN
+	If(@flag='I')
+	Begin	
+
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Insert into tbl_online_class(sch_id,class_id,section_id,subject_id,
+		teacher_id,tool,meeting_id,meeting_pwd,meeting_url,
+		created_by,updated_by,created_date,updated_date,is_del)values
+		(@schid,@classid,@sectionid,@subjectid,@teacherid,@tool,
+		@meetingid,@meetingpwd,@meetingurl,@userid,@userid,GETDATE(),GETDATE(),'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin		
+
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Select o.ID OnlineClassID, tool Tool, s.subjectName Subject,
+		(u.firstName+' '+u.lastName) Teacher, o.is_active IsActive,meeting_id MeetingID,
+		meeting_pwd MeetingPwd, meeting_url MeetingUrl
+		from tbl_online_class o
+		left join mSheetSubject s on s.id=o.subject_id and s.classID=o.class_id
+		left join stNamelist u on u.id=o.teacher_id
+		where o.sch_id=@schid and o.created_by=@userid and o.class_id=@classid
+		and o.section_id=@sectionid and 
+		case when @subjectid='-1' then '1' else o.subject_id end = case when @subjectid='-1' then'1' else @subjectid end
+		and teacher_id=@teacherid and o.is_del='N'
+		return;
+	End
+
+	If(@flag='US')
+	Begin
+		
+
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_online_class where sch_id=@schid and ID=@onlineclassid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Online Class does not exists' Message
+			return;
+		End
+		If(@isautoattendance='Y')
+		Begin           
+			declare @temp_tbl table(ID int identity(1,1) primary key,mem_id int)
+			set @classid= (Select class_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid)
+			set @sectionid= (Select section_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid)
+			set @subjectid= (Select subject_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid)
+			If not exists(Select 'm' from tbl_attendance where class_id=@classid and section_id=@sectionid and subject_id=@subjectid and english_date=format(GETDATE(),'yyyy-MM-dd')
+			 and sch_id=@schid)
+			Begin
+				Insert into @temp_tbl(mem_id)
+				Select id from stNamelist where classID=@classid and sectionID=@sectionid 
+				
+				Insert into tbl_attendance(sch_id,class_id,section_id,user_id,subject_id,
+				nepali_date,english_date,
+				attend_status,created_by,updated_by,created_date,updated_date,is_del) 
+				Select @schid,@classid,@sectionid,mem_id,@subjectid,@todaynepdate,format(GETDATE(),'yyyy-MM-dd'),'A',@userid,
+				@userid,GETDATE(),GETDATE(),'N'
+				from @temp_tbl
+			End
+		End
+		Update tbl_online_class set is_active=@isactive, updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@onlineclassid
+		
+		If(@isnotify='Y')
+		Begin		
+			declare @notify_tbl table(ID int identity(1,1) primary key,notification_token nvarchar(250))
+			set @classid= (Select class_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid)
+			set @sectionid= (Select section_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid)
+
+			Insert into @notify_tbl(notification_token)
+			Select notification_token from stNamelist where classID=@classid and sectionID=@sectionid;		
+			Select notification_token NotificationToken
+			from @notify_tbl
+			return;
+		End
+		Select 200 StatusCode, 'Success' Message 
+		return;
+	End
+
+
+	If(@flag='R')
+	Begin	
+
+		If not exists(Select 'm' from stNamelist where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_online_class where sch_id=@schid and ID=@onlineclassid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Online Class does not exists' Message
+			return;
+		End
+		Update tbl_online_class set is_del='Y', updated_by=@userid,
+		updated_date=GETDATE() 
+		where sch_id=@schid and ID=@onlineclassid
+		if(@classid='0' and @sectionid='0')
+		BEGIN
+		if exists(select * from tbl_online_class where class_id=@classid and section_id=@sectionid)
+		BEGIN		
+		Select 200 StatusCode, 'Success' Message
+		END
+		ELSE
+		BEGIN
+		Select 200 StatusCode, 'Success' Message
+		return;
+		END;
+		END
+		ELSE
+		BEGIN
+		Select 200 StatusCode, 'Success' Message
+		return;
+		END;
+		return;
+	End
+END

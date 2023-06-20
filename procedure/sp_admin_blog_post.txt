@@ -1,0 +1,96 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_blog_post]    Script Date: 6/20/2023 4:50:52 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_blog_post](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@categoryid int = null,
+	@title nvarchar(250) = null,
+	@slug nvarchar(250) = null,
+	@authcode nvarchar(250) = null,
+	@post nvarchar(max) = null,
+	@featimg nvarchar(250) = null,
+	@excerpt nvarchar(250) = null,
+	@meta nvarchar(250) = null,
+	@ispublished int = null,
+	@flag nvarchar(10) = null,
+	@blogid nvarchar(250) = null,
+	@imgurl nvarchar(250) = null,
+	@via int = null
+)
+AS
+BEGIN
+	
+	If not exists(Select 'm' from stNamelist where ID=@userid and del_flag='N') and @userid<>'-1'
+	Begin
+		Select 202 StatusCode, 'User does not exist' Message
+		return;
+	End
+	If(@flag='I')
+	Begin
+		Insert into tbl_blog_post(sch_id,created_by,updated_by,created_date,updated_date,category_id,
+		title,slug,post,feat_img,excerpt,meta,is_published,post_view,is_del) values
+		(@schid,@userid,@userid,GETDATE(),GETDATE(),@categoryid,@title,@slug,@post,@featimg,
+		@excerpt,@meta,@ispublished,0,'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='U')
+	Begin
+		If not exists(Select 'm' from tbl_blog_post where ID=@blogid)
+		Begin
+			Select 203 StatusCode, 'Blog does not exists' Message
+			return;
+		End
+		Update tbl_blog_post set category_id=@categoryid,title=@title,slug=@slug,post=@post,
+		feat_img=@featimg,excerpt=@excerpt,meta=@meta,is_published=@ispublished,
+		updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@blogid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from tbl_blog_post where ID=@blogid)
+		Begin
+			Select 203 StatusCode, 'Blog does not exists' Message
+			return;
+		End
+		Update tbl_blog_post set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@blogid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='SI')
+	Begin
+		Select category_id CategoryID, p.ID BlogID,title Title,slug Slug,post Post,
+		(@imgurl+'photo/blog/'+feat_img) FeatImg, excerpt Excerpt, meta Meta, 
+		'0' IsVideoFeat,
+		is_published IsPublished, post_view PostView, (u.firstName+' '+u.lastName) CreatedUser,
+		(@imgurl+'photo/user/'+u.image) CreatedUserImage
+		from tbl_blog_post p
+		left join stNamelist u on u.ID=p.created_by and u.del_flag='N'
+		where p.sch_id=@schid  and 
+		case when @via=1 then p.ID
+		when @via=2 then p.slug end=@blogid
+		and p.is_del='N'
+		return;
+	End
+
+
+	If(@flag='S')
+	Begin
+		Select ID BlogID, title Title, slug Slug, excerpt Excerpt, is_published IsPublished,
+		post_view PostView
+		from tbl_blog_post
+		where sch_id=@schid and case when @userid='-1' then '1' else created_by end=case when @userid='-1' then '1' else @userid end and is_del='N' order by ID desc
+		return;
+	End
+END
