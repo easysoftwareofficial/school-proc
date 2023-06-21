@@ -1,0 +1,26 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_staff]    Script Date: 6/21/2023 2:10:24 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_staff](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(20) = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	If(@flag='S')
+	Begin
+		
+		Select u.user_id MemID, (ud.firstName+' '+ud.lastName) MemName, 
+		(@imgurl+'photo/user/'+ud.image) MemImage, ud.fatherPhone MemContact, d.designation Designation,
+		d.orders "Order"
+		from tbl_user_designation u
+		left join stNamelist ud on ud.id=u.user_id
+		left join tbl_designation d on d.ID=u.designation_id and d.sch_id=u.sch_id and d.is_del='N'
+		where u.sch_id=@schid and u.is_del='N';
+		return;
+	End
+END

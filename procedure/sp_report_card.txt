@@ -1,0 +1,37 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_report_card]    Script Date: 6/21/2023 1:56:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_report_card](
+	@schid nvarchar(50) = null,
+	@reporttype nchar(1) = null,
+	@memid int =null,
+	@academicyear nvarchar(50) = null,
+	@imgurl nvarchar(50)=null,
+	@termid int = null
+)
+AS
+BEGIN
+	
+	If not exists(Select 'm' from stNamelist where id=@memid)
+	Begin
+		Select 203 StatusCode, 'Student does not exists' Message
+		return;
+	End
+
+	Select rc.ID ReportID, t.examTerminal TermName,
+	@imgurl+'marksheet/'+(CAST(class_id as nvarchar)+'/'+CAST(rc.term_id as nvarchar)+'/'+rc.mark_sheet_name+'.pdf') ReportUrl,
+	@memid UserID, FORMAT(CAST(rc.created_date as date),'yyyy/MM/dd') CreatedDate,rc.report_type ReportType
+	from tbl_report_card rc
+	left join msheetTerminal t on t.id=rc.term_id
+	where rc.sch_id=@schid 
+	-- and rc.report_type=@reporttype 
+	and rc.user_id=@memid and 
+	case when @termid='-1' then '1' else rc.term_id end = case when @termid='-1' then '1' else @termid end
+	and is_allow='Y';
+
+	return;
+END

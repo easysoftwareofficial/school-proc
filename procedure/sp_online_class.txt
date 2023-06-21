@@ -1,0 +1,69 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_online_class]    Script Date: 6/21/2023 1:54:40 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_online_class](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@usertype nvarchar(10) = null,
+	@onlineclassid int = null
+)
+AS
+BEGIN
+	
+	If(@flag='S')
+	Begin
+
+		Select c.ID OnlineClassID,c.subject_id SubjectID,s.subjectName Subject, 
+		u.id MemID, u.firstName+' '+u.lastName MemName, c.tool Tool,c.is_active IsActive,
+		c.meeting_id MeetingID, c.meeting_pwd MeetingPwd, c.meeting_url MeetingUrl
+		from tbl_online_class c
+		--left join tbl_online_attend_log a on a.online_class_id=c.ID 
+		left join mSheetSubject s on s.id=c.subject_id and  s.classID=c.class_id
+		left join stNamelist u on u.id=c.teacher_id 
+		where c.sch_id=@schid and c.class_id=@classid and c.section_id=@sectionid and
+		c.is_active='Y' and c.is_del='N';
+		return;
+	End
+
+	If (@flag='J')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 203 StatusCode, 'Student does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_online_class where ID=@onlineclassid )
+		Begin
+			Select 204 StatusCode, 'OnlineClassID does not exists' Message
+			return;
+		End
+		set @classid = (Select class_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid and is_del='N')
+		set @sectionid = (Select section_id from tbl_online_class where ID=@onlineclassid and sch_id=@schid and is_del='N')
+		If exists(Select 'm' from tbl_attendance where class_id=@classid and section_id=@sectionid 
+		and english_date=format(GETDATE(),'yyyy-MM-dd')
+		and attend_via='O')
+		Begin
+			Update tbl_attendance set attend_status='P', updated_date=GETDATE(), updated_by=@memid
+			where user_id=@memid and sch_id=@schid and class_id=@classid and section_id=@sectionid 
+			and english_date=format(GETDATE(),'yyyy-MM-dd')
+
+			Insert into tbl_online_attend_log(sch_id,mem_id,user_type,online_class_id,created_by,
+			updated_by,created_date,updated_date)
+			values(@schid,@memid,@usertype,@onlineclassid,@memid,@memid,GETDATE(),
+			GETDATE())
+			Select 200 StatusCode, 'Success' Message
+			return;
+		End
+		Select 200 StatusCode, 'Success' Message
+		
+	End
+
+END

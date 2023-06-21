@@ -1,0 +1,110 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_notification]    Script Date: 6/21/2023 1:48:31 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_notification](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@usertype nchar(1) = null,
+	@title nvarchar(50) = null,
+	@description nvarchar(250) = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	If(@flag='SP')
+	Begin
+		If(@usertype='S')
+		Begin
+			Select n.ID NotificationID, title Title, description Description, 
+			(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+			format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss tt') NotificationDate, (u.firstName+' '+u.lastName) CreatorFullName,
+			(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen, @memid UserID, 
+			(Select classID from stNamelist where id=@memid) ClassID
+			from tbl_notification n
+			left join stNamelist u on n.created_by=u.id
+			where n.sch_id=@schid and n.class_id=@classid and n.user_type=@usertype 
+			and n.section_id is null and n.user_id is null and is_del='N'
+			Union
+			Select n.ID NotificationID, title Title, description Description, 
+			(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+			format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss tt'), (u.firstName+' '+u.lastName) CreatorFullName,
+			(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen, @memid UserID, 
+			(Select classID from stNamelist where id=@memid) ClassID
+			from tbl_notification n
+			left join stNamelist u on n.created_by=u.id
+			where n.sch_id=@schid and n.class_id=@classid and n.section_id=@sectionid and n.user_id is null and n.user_type=@usertype 
+			and is_del='N'
+			Union
+			Select n.ID NotificationID, title Title, description Description, 
+			(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+			format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss tt') NotificationDate, (u.firstName+' '+u.lastName) CreatorFullName,
+			(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen, @memid UserID, 
+			(Select classID from stNamelist where id=@memid) ClassID
+			from tbl_notification n
+			left join stNamelist u on n.created_by=u.id
+			where n.sch_id=@schid and n.user_type=@usertype 
+			and n.user_id=@memid and is_del='N'
+			
+			return;
+		End
+
+		If(@usertype='T' or @usertype='A')
+		Begin
+			Select n.ID NotificationID, title Title, description Description, 
+			(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+			format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss') NotificationDate, (u.firstName+' '+u.lastName)CreatorFullName,
+			(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen, @memid UserID, 
+			(Select classID from stNamelist where id=@memid) ClassID
+			from tbl_notification n
+			left join stNamelist u on n.created_by=u.id
+			where n.user_type=@usertype and is_del='N' and n.user_id=@userid
+			union
+			Select n.ID NotificationID, title Title, description Description, 
+			(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+			format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss') NotificationDate, u.firstName+' '+u.lastName CreatorFullName,
+			(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen, @memid UserID, 
+			(Select classID from stNamelist where id=@memid) ClassID
+			from tbl_notification n
+			left join stNamelist u on n.created_by=u.id
+			where n.user_type=@usertype and is_del='N'
+			
+			return;
+		End
+	End
+
+	If(@flag='SG')
+	Begin
+		Select n.ID NotificationID, title Title, description Description, 
+		(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+		format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss') NotificationDate, u.firstName+' '+u.lastName CreatorFullName,
+		(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen
+		from tbl_notification n
+		left join stNamelist u on n.created_by=u.id
+		where n.sch_id=@schid and is_del='N' and 
+		n.class_id is null and n.section_id is null and n.user_id is null and n.user_type is null
+
+		return;
+	end
+
+	If(@flag='SE')
+	Begin
+		Select n.ID NotificationID, title Title, description Description, 
+		(@imgurl+'photo/notification/'+attachment) Attachment, attach_type AttachType,
+		format(convert(datetime,not_date),'yyyy-MM-dd hh:mm:ss') NotificationDate, u.firstName+' '+u.lastName CreatorFullName,
+		(@imgurl+'photo/user/'+u.image) CreatorImage, 'N' IsSeen,
+		 @memid UserID, 
+		(Select classID from stNamelist where id=@memid) ClassID
+		from tbl_notification n
+		left join stNamelist u on n.created_by=u.id
+		where n.sch_id='-1' and is_del='N' 
+
+		return;
+	End
+END

@@ -1,0 +1,194 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_discussion]    Script Date: 6/21/2023 10:14:01 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_discussion](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(5) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@userid int = null,
+	@title nvarchar(250) = null,
+	@description nvarchar(500) = null,
+	@discussionid int = null,
+	@commentid int = null,
+	@comment nvarchar(250) = null,
+	@isassigned  nvarchar(2) = null,
+	@imgurl nvarchar(250) = null
+)
+AS
+BEGIN
+
+	If(@flag='ST')
+	Begin
+		
+	select distinct ts.user_id UserID,(u.firstName+' '+u.lastName) FullName from tbl_teaching_subject ts,stNamelist u 
+	where ts.sch_id=@schid and ts.user_id=u.id and ts.class_id=@classid and ts.section_id=@sectionid;
+	return;
+	End;
+
+	If(@flag='I')
+	Begin
+	insert into tbl_discussion(sch_id,user_id,title,description,mem_id,created_by,updated_by,created_date,updated_date,is_del) 
+	values(@schid,@userid,@title,@description,@memid,@userid,@userid,GETDATE(),GETDATE(),'N');
+	
+	select 
+	d.ID DiscussionID,
+	d.user_id UserID,
+	(select top 1 full_Name from stNamelist us where us.id=d.user_id) FullName,
+	ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	
+	title Title,description Description,(select top 1 (firstName+' '+lastName) from stNamelist us where us.id=d.mem_id) AssignedTo,
+	d.updated_date LastUpdatedDate,'Y' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id 
+	where d.sch_id=@schid and d.mem_id=@userid and d.is_del='N' and  d.user_id!=d.mem_id
+	UNION
+	select d.ID DiscussionID,d.user_id UserID,
+		(select top 1 (firstName+' '+lastName) from stNamelist us where us.id=d.user_id) FullName,
+		ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	title Title,description Description,(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.mem_id) AssignedTo,d.updated_date LastUpdatedDate,'N' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id
+	where d.sch_id=@schid and d.user_id=@userid and d.is_del='N'  order by d.ID desc
+		return;
+	End;
+	
+		If(@flag='S')
+	Begin
+	
+	select 
+	d.ID DiscussionID,
+	d.user_id UserID,
+	(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.user_id) FullName,
+	ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	
+	title Title,description Description,(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.mem_id) AssignedTo,
+	d.updated_date LastUpdatedDate,'Y' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id
+	where d.sch_id=@schid and d.mem_id=@userid and d.is_del='N' and  d.user_id!=d.mem_id  
+	UNION
+	select d.ID DiscussionID,d.user_id UserID,
+		(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.user_id) FullName,
+		ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	title Title,description Description,(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.mem_id) AssignedTo,d.updated_date LastUpdatedDate,'N' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id
+	where d.sch_id=@schid and d.user_id=@userid and d.is_del='N' order by d.ID desc;
+
+		return;
+	End;
+
+	If(@flag='R')
+	Begin
+
+	if not exists(select 'M' from tbl_discussion where ID=@discussionid and is_del='N')
+	BEGIN
+	  select 201 StatusCode,'Discussion not found.' Message;
+	  return;
+	END
+
+	update tbl_discussion set is_del='Y',updated_by=@userid,updated_date=GETDATE() where sch_id=@schid and ID=@discussionid;
+	
+		select 
+	d.ID DiscussionID,
+	d.user_id UserID,
+	(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.user_id) FullName,
+	ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	
+	title Title,description Description,(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.mem_id) AssignedTo,
+	d.updated_date LastUpdatedDate,'Y' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id
+	where d.sch_id=@schid and d.mem_id=@userid and d.is_del='N' and  d.user_id!=d.mem_id  
+	UNION
+	select d.ID DiscussionID,d.user_id UserID,
+		(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.user_id) FullName,
+		ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
+	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	title Title,description Description,(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.mem_id) AssignedTo,d.updated_date LastUpdatedDate,'N' IsAssigned from tbl_discussion d
+	left join stNamelist u on u.id=d.user_id
+	where d.sch_id=@schid and d.user_id=@userid and d.is_del='N' order by d.ID desc;
+		return;
+	End;
+
+	If(@flag='DC')
+	Begin
+
+	if not exists(select 'M' from tbl_discussion_comment where discussion_id=@discussionid and is_del='N')
+	BEGIN
+	  select 201 StatusCode,'No comment found.' Message;
+	  return;
+	END
+
+	select dc.ID CommentID,dc.comment,u.firstName+' '+u.lastName FullName,
+	@imgurl+'photo/user/'+u.image UserImage,
+	dc.updated_date LastUpdatedDate from 
+	tbl_discussion_comment dc
+	left join stNamelist u on u.id=dc.user_id
+	where dc.discussion_id=@discussionid and dc.is_del='N' and dc.sch_id=@schid order by dc.ID desc
+
+	
+   return;
+	End;
+
+	If(@flag='IC')
+	Begin
+
+	if not exists(select 'M' from tbl_discussion where ID=@discussionid and is_del='N')
+	BEGIN
+	  select 201 StatusCode,'Discussion not found.' Message;
+	  return;
+	END
+
+	insert into tbl_discussion_comment(sch_id,user_id,discussion_id,comment,created_by,updated_by,created_date,updated_date,is_del) 
+	values(@schid,@userid,@discussionid,@comment,@userid,@userid,GETDATE(),GETDATE(),'N');
+	
+		
+	select dc.ID CommentID,dc.comment,u.firstName+' '+u.lastName FullName,
+	@imgurl+'photo/user/'+u.image UserImage,
+	dc.updated_date LastUpdatedDate from 
+	tbl_discussion_comment dc
+	left join stNamelist u on u.id=dc.user_id
+	where dc.discussion_id=@discussionid and dc.is_del='N' and dc.sch_id=@schid order by dc.ID desc;
+
+	END;
+
+	If(@flag='UC')
+	Begin
+
+	if not exists(select 'M' from tbl_discussion_comment where ID=@commentid and is_del='N')
+	BEGIN
+	  select 201 StatusCode,'Comment not found.' Message;
+	  return;
+	END
+
+	update tbl_discussion_comment set comment=@comment,updated_by=@userid,updated_date=GETDATE() where ID=@commentid	
+	
+	select dc.ID CommentID,dc.comment,u.firstName+' '+u.lastName FullName,
+	@imgurl+'photo/user/'+u.image UserImage,
+	dc.updated_date LastUpdatedDate from 
+	tbl_discussion_comment dc
+	left join stNamelist u on u.id=dc.user_id
+	where dc.discussion_id=@discussionid and dc.is_del='N' and dc.sch_id=@schid order by dc.ID desc
+
+	END;
+
+	If(@flag='RC')
+	Begin
+	if not exists(select 'M' from tbl_discussion_comment where ID=@commentid and is_del='N')
+	BEGIN
+	  select 201 StatusCode,'Comment not found.' Message;
+	  return;
+	END
+	
+	update tbl_discussion_comment set is_del='Y',updated_by=@userid,updated_date=GETDATE() where ID=@commentid	
+		
+    select dc.ID CommentID,dc.comment,u.firstName+' '+u.lastName FullName,
+	@imgurl+'photo/user/'+u.image UserImage,
+	dc.updated_date LastUpdatedDate from 
+	tbl_discussion_comment dc
+	left join stNamelist u on u.id=dc.user_id
+	where dc.discussion_id=@discussionid and dc.is_del='N' and dc.sch_id=@schid order by dc.ID desc;
+
+	END;
+END

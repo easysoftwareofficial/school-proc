@@ -1,0 +1,87 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_student]    Script Date: 6/21/2023 2:10:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_student](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid xml = null,
+	@username nvarchar(250) = null,
+	@imgurl nvarchar(250) = null,
+	@image nvarchar(250) = null,
+	@studentid int = null,
+	@password nvarchar(250) = null
+)AS
+BEGIN
+	IF(@flag='S')
+	Begin
+
+		If not exists(Select 'm' from stClass with (nolock) where id=@classid and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'Class does not exists' Message
+			return;
+		End	
+
+		If not exists(Select 'm' from stSection with (nolock) where academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		and id=any (Select section_id = Node.Data.value('(SectionID)[1]','NVARCHAR(10)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) )
+		Begin
+			Select 203 StatusCode, 'Section does not exists' Message
+			return;
+		End	
+
+		select  u.id StudentID,classid ClassID,case when (appType='') then 'S' else left(appType,1) end as UserType,'' SchID,appUser StdUserName,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as StdFullName,CAST(rNo as nvarchar(50)) RollNo,u.sectionID SectionID,
+    	ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,
+		@imgurl+'photo/user/'+u.image Image,u.fatherName FatherName,DOB DateOfBirth,gender Gender,
+		left(fatherMobile,10) Mobile,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Student' 
+		and u.classID=@classid
+		and u.sectionID = any (Select section_id = Node.Data.value('(SectionID)[1]','NVARCHAR(10)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data))  order by CAST(u.rNo as bigint) asc;
+		return;
+	End
+
+	If(@flag='IMG')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End	 
+
+		Update stNamelist set image=@image
+		where appUser=@username
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='RP')
+	Begin
+	If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End	 
+		Update stNamelist set appPWD = @password,is_blocked='N',failed_attempt='0'
+		where  appUser=@username
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='DS')
+	Begin		
+	If not exists(Select 'm' from stNamelist with (nolock) where id=@userid)
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End	 
+		Select 201 StatusCode, 'Feature not available.' Message
+		return;
+	End
+END

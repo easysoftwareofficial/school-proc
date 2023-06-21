@@ -1,0 +1,91 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_routine]    Script Date: 6/21/2023 1:57:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_routine](
+	@schid nvarchar(50) = null,
+	@routinetype nchar(2) = null,
+	@memid int = null,
+	@classid int = null,
+	@sectionid int = null,
+	@weekid int = null,
+	@termid int = null
+)AS
+BEGIN
+	IF not (@routinetype='C' or @routinetype='E' or @routinetype='TC')
+	Begin
+		Select 202 StatusCode, 'Routine Type does not exists' Message
+		return;
+	End
+
+	If(@routinetype='C')
+	Begin
+		Select r.ID RoutineID, week_id WeekDay, period_order Period,
+		FORMAT(CAST(r.start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(r.end_time as datetime),'hh:mm tt') EndTime,	 
+		(select distinct subjectName from mSheetSubject s where s.id=r.subject_id and s.classID=r.class_id) Subject, (u.firstName+' '+u.lastName) SubTeacher, room_no RoomNo, 
+		is_break 
+		 IsBreak, 
+		 '' OnlineClass, r.class_id ClassID, r.section_id SectionID
+		from tbl_class_routine r
+		left join stNamelist u on u.id=r.sub_teacher_id
+		where r.class_id=@classid and r.is_del='N' 
+		and case when @weekid='-1' then '1' else week_id end = case when @weekid='-1' then '1' else @weekid end 
+		order by period_order
+		return;
+	End
+
+	If(@routinetype='TC')
+	Begin
+	--select * from tbl_class_routine;
+		Select r.ID RoutineID, week_id WeekDay, period_order Period,
+		FORMAT(CAST(r.start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(r.end_time as datetime),'hh:mm tt') EndTime,	 
+		(select distinct subjectName from mSheetSubject s where s.id=r.subject_id  and s.classID=r.class_id) Subject, 
+		'' SubTeacher, room_no RoomNo, 
+		is_break  IsBreak, 
+		is_break  IsBreakID, 		
+		'' OnlineClass, r.class_id ClassID,
+		(select distinct clName from stClass where class_id=r.class_id and sch_id=@schid) Class,
+		 r.section_id SectionID,
+		 (select distinct secName from stSection where class_id=r.class_id and id=r.section_id and sch_id=@schid) Section
+		from tbl_class_routine r		
+		where r.is_del='N' and r.sub_teacher_id=@memid
+		and case when @weekid='-1' then '1' else week_id end = case when @weekid='-1' then '1' else @weekid end 
+		order by period_order
+		return;
+	End
+
+	If(@routinetype='E')
+	Begin
+		Select distinct r.ID RoutineID, 
+		t.id TermID,
+		case shift_id when 'M' then 'Morning'
+		when 'D' then 'Day'
+		when 'E' then 'Evening'
+		when 'N' then 'Night'
+		end Shift,
+		case week_id when 1 then 'Sunday' 
+		when 2 then 'Monday'
+		when 3 then 'Tuesday' 
+		when 4 then 'Wednesday'
+		when 5 then 'Thursday' 
+		when 6 then 'Friday'
+		when 7 then 'Saturday'
+		end Week,
+		FORMAT(CAST(start_time as datetime),'hh:mm tt') StartTime,
+		FORMAT(CAST(end_time as datetime),'hh:mm tt') EndTime,
+		t.examTerminal Term, s.subjectName Subject,
+		r.room_no RoomNo, r.exam_date ExamDate		
+		from tbl_exam_routine r
+		left join msheetTerminal t on t.id=r.term_id
+		left join mSheetSubject s on s.id=r.subject_id and s.classID=r.class_id
+		where r.sch_id=@schid and r.class_id=@classid 
+		and case when @termid='-1' then '1' else r.term_id end = case when @termid='-1' then '1' else @termid end
+		and r.is_del='N' order by t.id
+		return;
+	End
+END

@@ -1,0 +1,227 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_session]    Script Date: 6/21/2023 2:07:26 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_session](   
+	@schid nvarchar(20) = null,
+	@schname nvarchar(250) = null,
+	@schaddress nvarchar(250) = null,
+	@schtel nvarchar(250) = null,
+	@schlogo nvarchar(250) = null,
+	@schcontperson nvarchar(250) = null,
+	@authtoken nvarchar(250) = null,
+	@aboutus nvarchar(250) = null,
+	@msg nvarchar(250) = null,
+	@loclat nvarchar(250) = null,
+	@loclong nvarchar(250) = null,
+	@schphoto nvarchar(250) = null,
+	@schwebsite nvarchar(250) = null,
+	@schfb nvarchar(250) = null,
+	@schtwitter nvarchar(250) = null,
+	@schyt nvarchar(250) = null,
+	@khaltisecret nvarchar(250) = null,
+	@khaltimerchant nvarchar(250) = null,
+	@resultsheet nvarchar(250) = null,
+	@isupay nvarchar(250) = null,
+	@nottoken nvarchar(250) = null,
+	@username nvarchar(50) = null,
+	@password nvarchar(250) = null,
+	@notificationtoken nvarchar(250) = null,
+	@deviceid nvarchar(250) = null,
+	@source nvarchar(1) = null,
+	@flag nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@newpassword nvarchar(250) = null,
+	@userid int = null,
+	@imgurl nvarchar(250) = null,
+	@usercode nvarchar(50) = null
+)AS
+BEGIN
+	If(@flag='login')
+	Begin		
+		If not exists(Select 'm' from stNamelist with(nolock) where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) -- and del_flag='N'
+		Begin
+			Select 207 StatusCode, 'User not found' Message
+			return;
+		End
+		If exists(Select 'm' from stNamelist with(nolock) where appAccess='N' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 205 StatusCode, 'User not allowed' Message
+			return;
+		end
+		If exists(Select 'm' from stNamelist with(nolock) where is_blocked='Y' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 206 StatusCode, 'User id blocked. Please contact to school administrator' Message
+			return;
+		end
+		If not exists(select 'M' from stNamelist where appuser=@username and apppwd=@password and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Update stNamelist set failed_attempt=isnull(failed_attempt,0)+1 where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+			If exists(Select 'm' from stNamelist where failed_attempt>10 and appUser = @username  and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+			Begin
+				Update stNamelist set is_blocked='Y' where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+			End
+			Select 207 StatusCode, 'Password does not match remaining attempt '+(Select convert(nvarchar(20),10-failed_attempt) from stNamelist where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) Message
+			return;
+		End
+		If  exists(select 'M' from stNamelist where appuser=@username and apppwd=@password and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Update stNamelist set lastLogginedDate = GETDATE(), failed_attempt=0, notification_token=@notificationtoken
+			where appUser=@username ;
+
+			select 
+			@schid SchID,@schname SchName,@schaddress SchAddress,@schtel SchTel,@schlogo SchLogo,
+			@schcontperson SchContactPerson,@authtoken AuthToken,@aboutus AboutUs,@msg Msg,@loclat LocLat,@loclong LocLong,
+			@schphoto SchPhoto,@schwebsite SchWebsite,@schfb SchFb,@schtwitter SchTwitter,@schyt SchYt,
+			@khaltisecret KhaltiSecretKey,@khaltimerchant KhaltiMerchantKey,@resultsheet ResultSheet,@isupay IsUPay,@nottoken NotificationToken,
+			ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,admitDate AdmissionDate,
+			a.id UserID,case when appUser='' then '-' else appUser end as UserName,case when (appPWD='') then '1' else appPWD end as Password,case when (appType='') then 'S' else left(appType,1) end as UserType,
+			CAST(rNo as NVARCHAR(10)) RollNo,classid ClassID,(select clName from stClass where id=a.classid and clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) ClassName,
+			sectionid SectionID,(select secName from stSection b where b.id=a.sectionid and b.secName!='' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) SectionName,
+			DOB DateOfBirth,left(fatherMobile,10) Phone,
+			nationality Religion,'' Email,
+			isnull(bloodGroup,'') BloodGroup,c.houseName House,
+			@imgurl+'photo/user/'+image UserImage,case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as FullName,
+			appUser UserCode,
+			fatherTemp TempAddress,fatherPerm PermAddress,fatherName FatherName,fatherMobile FatherPhone,'-' FatherOccupation,
+			motherName MotherName,motherPhone MotherPhone,'-' MotherOccupation,
+			emergencyName GuardianName,'-' GuardianOccupation,'-' MedicalHistory,gender Gender,
+			'' AttendStatus,'' RouteName,'' RouteFrom,'' RouteTo,'' RouteDriverName,'' RouteBusNum,
+			'afdkjsaf' AuthCode,'' LastLoggedInDate,'G' MarksSheetType,(select top 1 academicYear from stAcademicYear where defaultYear='Yes') AcademicYear,(select top 1 startDate from stAcademicYear where defaultYear='Yes') AcademinFrom,
+			(select top 1 endDate from stAcademicYear where defaultYear='Yes') AcademicTo
+			from stNamelist a,acLink b,stHouse c where 
+			a.houseID=c.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and
+			appUser=@username
+			
+			return;
+		End
+	End
+	
+	If(@flag='session')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) -- and del_flag='N'
+		Begin
+			Select 207 StatusCode, 'User not found' Message
+			return;
+		End
+		If exists(Select 'm' from stNamelist with(nolock) where appAccess='N' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 205 StatusCode, 'User not allowed' Message
+			return;
+		end
+		If exists(Select 'm' from stNamelist with(nolock) where is_blocked='Y' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 206 StatusCode, 'User id blocked. Please contact to school administrator' Message
+			return;
+		end
+
+		Update stNamelist set lastLogginedDate = GETDATE(), failed_attempt=0, notification_token=@notificationtoken 
+		where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') ;
+
+	        select 
+			@schid SchID,@schname SchName,@schaddress SchAddress,@schtel SchTel,@schlogo SchLogo,
+			@schcontperson SchContactPerson,@authtoken AuthToken,@aboutus AboutUs,@msg Msg,@loclat LocLat,@loclong LocLong,
+			@schphoto SchPhoto,@schwebsite SchWebsite,@schfb SchFb,@schtwitter SchTwitter,@schyt SchYt,
+			@khaltisecret KhaltiSecretKey,@khaltimerchant KhaltiMerchantKey,@resultsheet ResultSheet,@isupay IsUPay,@nottoken NotificationToken,
+			ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,admitDate AdmissionDate,
+			a.id UserID,case when appUser='' then '-' else appUser end as UserName,case when (appPWD='') then '1' else appPWD end as Password,case when (appType='') then 'S' else left(appType,1) end as UserType,
+			CAST(rNo as NVARCHAR(10)) RollNo,classid ClassID,(select clName from stClass where id=a.classid and clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) ClassName,
+			sectionid SectionID,(select secName from stSection b where b.id=a.sectionid and b.secName!='' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) SectionName,
+			DOB DateOfBirth,left(fatherMobile,10) Phone,
+			nationality Religion,'' Email,
+			isnull(bloodGroup,'') BloodGroup,c.houseName House,
+			@imgurl+'photo/user/'+image UserImage,case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as FullName,
+			appUser UserCode,
+			fatherTemp TempAddress,fatherPerm PermAddress,fatherName FatherName,fatherMobile FatherPhone,'-' FatherOccupation,
+			motherName MotherName,motherPhone MotherPhone,'-' MotherOccupation,
+			emergencyName GuardianName,'-' GuardianOccupation,'-' MedicalHistory,gender Gender,
+			'' AttendStatus,'' RouteName,'' RouteFrom,'' RouteTo,'' RouteDriverName,'' RouteBusNum,
+			'afdkjsaf' AuthCode,'' LastLoggedInDate,'G' MarksSheetType,(select top 1 academicYear from stAcademicYear where defaultYear='Yes') AcademicYear,(select top 1 startDate from stAcademicYear where defaultYear='Yes') AcademinFrom,
+			(select top 1 endDate from stAcademicYear where defaultYear='Yes') AcademicTo
+			from stNamelist a,acLink b,stHouse c where 
+			a.houseID=c.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and
+			appUser=@username 
+		return;
+	End
+
+
+	If(@flag='changepassword')
+	Begin
+	
+		If exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 205 StatusCode, 'User not allowed to use the app' Message
+			return;
+		End
+		If exists(Select 'm' from stNamelist with(nolock) where is_blocked='Y' and id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 206 StatusCode, 'User is blocked. Please contact to school administrator' Message
+			return;
+		end
+		If(Select PWDCOMPARE(@password,(Select apppwd from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))))!=1
+		Begin
+			Update stnamelist set failed_attempt=isnull(failed_attempt,0)+1 where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+			If exists(Select 'm' from stNamelist where failed_attempt>10 and id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+			Begin
+				Update stNamelist set is_blocked='Y' where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+			End
+			Select 207 StatusCode, 'OldPassword does not match' Message
+			return;
+		End
+
+		Update tbl_user set password=PWDENCRYPT(@newpassword) where user_id=@userid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+
+	If(@flag='qr')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')) -- and del_flag='N'
+		Begin
+			Select 207 StatusCode, 'User not found' Message
+			return;
+		End
+		If exists(Select 'm' from stNamelist with(nolock) where appAccess='N' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 205 StatusCode, 'User not allowed' Message
+			return;
+		end
+		If exists(Select 'm' from stNamelist with(nolock) where is_blocked='Y' and appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 206 StatusCode, 'User id blocked. Please contact to school administrator' Message
+			return;
+		end
+
+		Update stNamelist set lastLogginedDate = GETDATE(), failed_attempt=0, notification_token=@notificationtoken 
+		where appUser=@username and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') ;
+
+ select 
+			@schid SchID,@schname SchName,@schaddress SchAddress,@schtel SchTel,@schlogo SchLogo,
+			@schcontperson SchContactPerson,@authtoken AuthToken,@aboutus AboutUs,@msg Msg,@loclat LocLat,@loclong LocLong,
+			@schphoto SchPhoto,@schwebsite SchWebsite,@schfb SchFb,@schtwitter SchTwitter,@schyt SchYt,
+			@khaltisecret KhaltiSecretKey,@khaltimerchant KhaltiMerchantKey,@resultsheet ResultSheet,@isupay IsUPay,@nottoken NotificationToken,
+			ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,admitDate AdmissionDate,
+			a.id UserID,case when appUser='' then '-' else appUser end as UserName,case when (appPWD='') then '1' else appPWD end as Password,case when (appType='') then 'S' else left(appType,1) end as UserType,
+			CAST(rNo as NVARCHAR(10)) RollNo,classid ClassID,(select clName from stClass where id=a.classid and clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) ClassName,
+			sectionid SectionID,(select secName from stSection b where b.id=a.sectionid and b.secName!='' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) SectionName,
+			DOB DateOfBirth,left(fatherMobile,10) Phone,
+			nationality Religion,'' Email,
+			isnull(bloodGroup,'') BloodGroup,c.houseName House,
+			@imgurl+'photo/user/'+image UserImage,case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as FullName,
+			appUser UserCode,
+			fatherTemp TempAddress,fatherPerm PermAddress,fatherName FatherName,fatherMobile FatherPhone,'-' FatherOccupation,
+			motherName MotherName,motherPhone MotherPhone,'-' MotherOccupation,
+			emergencyName GuardianName,'-' GuardianOccupation,'-' MedicalHistory,gender Gender,
+			'' AttendStatus,'' RouteName,'' RouteFrom,'' RouteTo,'' RouteDriverName,'' RouteBusNum,
+			'afdkjsaf' AuthCode,'' LastLoggedInDate,'G' MarksSheetType,(select top 1 academicYear from stAcademicYear where defaultYear='Yes') AcademicYear,(select top 1 startDate from stAcademicYear where defaultYear='Yes') AcademinFrom,
+			(select top 1 endDate from stAcademicYear where defaultYear='Yes') AcademicTo
+			from stNamelist a,acLink b,stHouse c where 
+			a.houseID=c.id and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and
+			appUser=@usercode 
+		return;
+	End
+END

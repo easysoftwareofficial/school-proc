@@ -1,0 +1,187 @@
+
+ALTER proc [dbo].[sp_leave](
+	@schid nvarchar(50) = null,
+	@memid int = null,
+	@flag nvarchar(10) = null,
+	@dflag nvarchar(10) = null,
+	@title nvarchar(250) = null,
+	@description nvarchar(250) = null,
+	@engfrom  nvarchar(50) = null,
+	@engto nvarchar(50) = null,
+	@nepfrom  nvarchar(50) = null,
+	@nepto nvarchar(50) = null,
+	@noofdays int = null,
+	@usertype nvarchar(10) = null,
+	@leaveid int = null
+)AS
+BEGIN
+	If not (@flag='S' or @flag='I' or @flag='R')
+	Begin
+		Select 203 StatusCode, 'Flag does not exists' Message
+		return;
+	End
+	If(@flag = 'I')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'Member does not exists' Message
+			return;
+		End
+
+		Insert into tbl_leave(sch_id,user_id,user_type,title, description,eng_date_from,
+		eng_date_to,nep_date_from,nep_date_to,no_of_days,is_approved,created_date,updated_date,is_del)
+		values
+		(@schid,@memid,@usertype,@title,@description,@engfrom,@engto,@nepfrom,@nepto,@noofdays,
+		'P',format(GETDATE(),'yyyy-MM-dd hh:mm:ss.mmm'),format(GETDATE(),'yyyy-MM-dd hh:mm:ss.mmm'), 'N')
+		If(@dflag='N')
+		Begin
+		
+			Select id LeaveID, title Title, description "Description", nep_date_from "From", 
+			nep_date_to "To", no_of_days NoOfDays, is_approved IsApprovedID,
+			case is_approved when 'P' then 'Pending'
+			when 'Y' then 'Approved'
+			when 'N' then 'Rejected'
+			end IsApproved,
+			--case ISNULL(cast(RTrim(is_approved) as nvarchar),'P')
+			--when N'Y' then 'Approved' 
+			--when N'P' then 'Pending'			
+			--when N'N' then 'Rejected'
+			--else 'Pending'
+			--end IsApproved, 
+			@memid UserID,			
+			approved_remarks ApprovedRemarks,
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss.mmm') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N'
+			order by id desc
+			return;
+		End
+
+		If(@dflag='E')
+		Begin
+			Select id LeaveID, title Title, description "Description", eng_date_from "From", 
+			eng_date_to "To", no_of_days NoOfDays,is_approved IsApprovedID,
+			case RTrim(CAST([is_approved] As VarChar))
+			when 'P' then 'Pending'
+			when 'Y' then 'Approved' 
+			when 'N' then 'Rejected'
+			end IsApproved, approved_remarks ApprovedRemarks,
+			@memid UserID,	
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N'
+			order by id desc
+			return;
+		End
+		return;
+
+	End
+
+	If(@flag='S')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'Member does not exists' Message
+			return;
+		End
+		If(@dflag='N')
+		Begin		
+			Select id LeaveID, title Title, description "Description", nep_date_from "From", 
+			nep_date_to "To", no_of_days NoOfDays,is_approved IsApprovedID,
+			case is_approved when 'P' then 'Pending'
+			when 'Y' then 'Approved' 
+			when 'N' then 'Rejected'
+			end IsApproved, 
+			@memid UserID,			
+			approved_remarks ApprovedRemarks,
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss.mmm') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N'
+			order by id desc
+			return;
+		End
+
+		If(@dflag='E')
+		Begin
+			Select id LeaveID, title Title, description "Description", eng_date_from "From", 
+			eng_date_to "To", no_of_days NoOfDays, is_approved IsApprovedID,
+			case is_approved when 'P' then 'Pending'
+			when 'A' then 'Approved' 
+			when 'R' then 'Rejected'
+			end IsApproved, approved_remarks ApprovedRemarks,
+			@memid UserID,	
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss.mmm') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N' 
+			order by id desc
+			return;
+		End
+	End
+
+	If(@flag='R')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@memid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'Member does not exists' Message
+			return;
+		End
+		If not exists(Select 'm' from tbl_leave with (nolock) where id=@leaveid and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'Leave does not exists' Message
+			return;
+		End
+		Update tbl_leave set is_del='Y', updated_date=GETDATE() where sch_id=@schid and user_id=@memid and id=@leaveid and is_approved='P';
+		--
+		If(@dflag='N')
+		Begin
+		  if exists(select  'M'  from tbl_leave where sch_id=@schid and user_id = @memid and is_del='N')
+		  BEGIN
+			Select id LeaveID, title Title, description "Description", nep_date_from "From", 
+			nep_date_to "To", no_of_days NoOfDays, is_approved IsApprovedID,
+			case is_approved when 'P' then 'Pending'
+			when 'A' then 'Approved' 
+			when 'R' then 'Rejected'
+			end IsApproved, 
+			@memid UserID,			
+			approved_remarks ApprovedRemarks,
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N'
+			order by id desc
+			return;
+			End;
+			ELSE
+			Begin
+			select 200 StatusCode,'success' Message;
+			End;
+		End;
+
+		If(@dflag='E')
+		Begin
+		 if exists(select  'M'  from tbl_leave where sch_id=@schid and user_id = @memid and is_del='N')
+		  BEGIN
+			Select id LeaveID, title Title, description "Description", eng_date_from "From", 
+			eng_date_to "To", no_of_days NoOfDays, is_approved IsApprovedID,
+			case is_approved when 'P' then 'Pending'
+			when 'A' then 'Approved' 
+			when 'R' then 'Rejected'
+			end IsApproved, approved_remarks ApprovedRemarks,
+			@memid UserID,	
+			(Select firstName+' '+lastName from stNamelist where id=approved_by) ApprovedBy, format(convert(datetime,created_date),'yyyy-MM-dd') CreatedDate
+			from tbl_leave
+			where sch_id=@schid and user_id = @memid and is_del='N'
+			order by id desc
+			return;
+			End;
+			ELSE
+			Begin
+			select 200 StatusCode,'success' Message;
+			End;
+		End
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

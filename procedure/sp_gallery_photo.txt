@@ -1,0 +1,34 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_gallery_photo]    Script Date: 6/21/2023 1:44:09 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_gallery_photo](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(10) = null,
+	@albumid int = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+
+	iF(@flag='S')
+	Begin
+		
+		If not exists(Select 'm' from tbl_album where sch_id=@schid and ID=@albumid and is_del='N')
+		Begin
+			Select 202 StatusCode, 'Album does not exists' Message
+			return;
+		End
+
+		Select ID PhotoID, file_name PhotoName,
+		@imgurl+'photo/gallery/'+file_src PhotoUrl
+		from tbl_gallery
+		where case when @schid='-1' then '1' else sch_id end = case when @schid='-1' then '1' else @schid end 
+		and album_id=@albumid and is_del='N';
+
+		return;
+	End
+	
+END

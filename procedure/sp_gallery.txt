@@ -1,0 +1,49 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_gallery]    Script Date: 6/21/2023 1:42:43 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_gallery](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	If (@flag='S')
+	Begin
+	
+
+		If not exists(Select 'm' from stNamelist where id=@memid) and @memid='-1'
+		Begin
+			Select 203 StatusCode, 'MemID does not exists' Message
+			return;
+		End
+
+		select tbl_album.ID AlbumID,tbl_album.album_name AlbumName, 
+		(Select count(*) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=0 and tbl_album.section_id=0 and tbl_album.user_id=0) NoOfPhoto,
+		(Select top 1 (@imgurl+'photo/gallery/'+file_src) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=0 and tbl_album.section_id=0 and tbl_album.user_id=0) Thumbnail from tbl_album where sch_id=@schid and class_id=0 and section_id=0 and user_id=0 and is_del='N'
+		UNION
+		select tbl_album.ID AlbumID,tbl_album.album_name AlbumName, 
+		(Select count(*) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=0 and tbl_album.user_id=0) NoOfPhoto,
+		(Select top(1) (@imgurl+'photo/gallery/'+file_src) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=0 and tbl_album.user_id=0) Thumbnail
+		from tbl_album where sch_id=@schid and class_id=@classid and section_id=0 and user_id=0 and is_del='N'
+		UNION
+		select tbl_album.ID AlbumID,tbl_album.album_name AlbumName, 
+		(Select count(*) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=@sectionid and tbl_album.user_id=0) NoOfPhoto,
+		(Select top(1) (@imgurl+'photo/gallery/'+file_src) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=@sectionid and tbl_album.user_id=0) Thumbnail
+	        from tbl_album where sch_id=@schid and class_id=@classid and section_id=@sectionid and user_id=0 and is_del='N'
+		UNION
+		select tbl_album.ID AlbumID,tbl_album.album_name AlbumName, 
+		(Select count(*) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=@sectionid and tbl_album.user_id=@memid) NoOfPhoto,
+		(Select top(1) (@imgurl+'photo/gallery/'+file_src) from tbl_gallery where is_del='N' and album_id=tbl_album.ID and sch_id=tbl_album.sch_id and tbl_album.class_id=@classid and tbl_album.section_id=@sectionid and tbl_album.user_id=@memid) Thumbnail
+	        from tbl_album where sch_id=@schid and user_id=@memid and is_del='N'
+		return;
+
+
+	End
+END

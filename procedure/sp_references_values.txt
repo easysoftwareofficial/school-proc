@@ -1,0 +1,36 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_reference_values]    Script Date: 6/21/2023 1:55:28 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_reference_values](
+	@schid nvarchar(50) = null,
+	@class_id nvarchar(50) = null,
+	@section_id nvarchar(50) = null,
+	@mem_id nvarchar(50) = null,
+	@dflag nvarchar(10) = null
+)
+AS
+BEGIN
+	If(@dflag='TERM')
+	Begin
+		select id TermID,case when examTerminal='' then '-' else examTerminal end as TermName from msheetTerminal where academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		return;
+	End
+
+   If(@dflag='SUBJECT')
+	Begin		
+	select c.id as Subject,c.subjectName as SubjectName from mSheetSubject c where 
+	c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes') and c.classID=@class_id;		
+		return;
+	End
+
+	If(@dflag='ACADEMIC')
+	Begin
+		Select academicYear AcademicYear, startDate "From", endDate "To", activateinactivate IsActive
+		from tbl_academic_year
+		return;
+	End
+END
