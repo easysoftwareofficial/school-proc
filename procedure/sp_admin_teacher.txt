@@ -1,0 +1,45 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_teacher]    Script Date: 6/21/2023 9:58:49 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_teacher](
+	@schid nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@imgurl nvarchar(500) = null
+)AS
+BEGIN
+	If(@flag='S')
+	Begin	
+	select  u.id TeacherID,@schid SchID,appUser TeacherUsername,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as TeacherName,    	
+		@imgurl+'photo/user/'+u.image Image,gender Gender,
+		left(fatherMobile,10) Phone,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and (u.appType = 'Teacher' or u.appType = 'Admin')	
+		return;
+	End
+
+	If(@flag='SA')
+	Begin	
+	select  u.id TeacherID,@schid SchID,appUser TeacherUsername,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as TeacherName,    	
+		@imgurl+'photo/user/'+u.image Image,gender Gender,
+		left(fatherMobile,10) Phone,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Admin'	
+		return;
+	End
+
+	If(@flag='ST')
+	Begin	
+	select  u.id TeacherID,@schid SchID,appUser TeacherUsername,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as TeacherName,    	
+		@imgurl+'photo/user/'+u.image Image,gender Gender,
+		left(fatherMobile,10) Phone,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Teacher'
+		return;
+	End
+END

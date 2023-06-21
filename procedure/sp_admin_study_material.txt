@@ -1,0 +1,94 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_study_material]    Script Date: 6/21/2023 9:56:33 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_study_material](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@studyalbumid int = null,
+	@title nvarchar(250) = null,
+	@description nvarchar(500) = null,
+	@name nvarchar(50) = null,
+	@authcode nvarchar(250) = null,
+	@url nvarchar(250) = null,
+	@type nvarchar(10) = null,
+	@extension nvarchar(10) = null,
+	@materialid int = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		End	
+		If not exists(Select 'm' from tbl_album_stdy where ID=@studyalbumid and is_del='N' and sch_id=@schid)
+		Begin
+			Select 203 StatusCode, 'StudyAlbumID does not exists' Message
+			return;
+		End
+		If exists(Select 'm' from tbl_stdy_material where title=@title and sch_id=@schid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Title already exists' Message
+			return;
+		End
+
+		Insert into tbl_stdy_material(sch_id,user_id,stdy_album,title,
+		description,file_name,file_url,file_type,file_exe,created_by,
+		updated_by,created_date,updated_date,is_del) values
+		(@schid,@userid,@studyalbumid,@title,@description,@name,
+		@url,
+		@type,@extension,@userid,@userid,FORMAT(GETDATE(),'yyyy-MM-dd'),FORMAT(GETDATE(),'yyyy-MM-dd'),'N')
+
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		End	
+		If not exists(Select 'm' from tbl_album_stdy where ID=@studyalbumid and is_del='N' and sch_id=@schid) and @studyalbumid<>'-1'
+		Begin
+			Select 203 StatusCode, 'StudyAlbumID does not exists' Message
+			return;
+		End
+		Select ID MaterialID, title Title, description Description, file_name name,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_type FileType, file_exe Extension, created_date CreatedDate
+		from tbl_stdy_material s
+		where sch_id=@schid and user_id=@userid and is_del='N' and
+		case when @studyalbumid='-1' then'1' else stdy_album end =case when @studyalbumid='-1' then'1' else @studyalbumid end 
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		End	
+		If not exists(Select 'm' from tbl_stdy_material where sch_id=@schid and ID=@materialid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'MaterialID does not exists' Message
+			return;
+		End	
+
+		Update tbl_stdy_material set is_del='Y', updated_by=@userid
+		where ID=@materialid and sch_id=@schid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

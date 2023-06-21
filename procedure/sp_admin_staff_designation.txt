@@ -1,0 +1,105 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_staff_designation]    Script Date: 6/21/2023 9:56:07 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_staff_designation](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@authcode nvarchar(250) = null,
+	@designationid int = null,
+	@staff xml = null,
+	@flag nvarchar(10) = null
+)AS
+BEGIN
+	
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N')
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		declare @temp_tbl TABLE(ID int identity(1,1),mem_id int ,usertype nvarchar(10))
+		declare @i int,@count int
+		set @i=1
+		set @count = 
+		(SELECT count(1) FROM @staff.nodes('/ArrayOfStaffLst/StaffLst') Node(Data));
+
+		Insert into @temp_tbl(mem_id,usertype)
+			Select 
+			mem_id=Node.Data.value('(MemID)[1]','INT'),
+			usertype=Node.Data.value('(UserType)[1]','NVARCHAR(10)')
+			FROM @staff.nodes('/ArrayOfStaffLst/StaffLst') Node(Data) 
+
+		while(@count!=0)
+		begin
+			
+			declare @memid int, @usertype nvarchar(10)
+			set @memid = (Select mem_id from @temp_tbl where ID=@i)
+			set @usertype = (Select usertype from @temp_tbl where ID=@i)
+
+			If exists(Select 'm' from tbl_user_designation where user_id=@memid)
+			Begin
+				Update tbl_user_designation set designation_id=@designationid, updated_by=@userid,
+				updated_date=GETDATE()
+				where user_id=@memid and sch_id=@schid
+			End
+			else
+			Begin
+				Insert into tbl_user_designation(sch_id,user_id,designation_id,created_by,updated_by,
+				created_date,updated_date,is_del) values
+				( @schid,@memid,@designationid,@userid,@userid,GETDATE(),GETDATE(),'N') 
+			End
+
+			set @count=@count-1
+			set @i = @i+1
+		end
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') and @userid<>'-1'
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_designation where sch_id=@schid and ID=@designationid and is_del='N') and @designationid<>'-1'
+		Begin
+			Select 203 StatusCode, 'DesignationID does not exists' Message
+			return;
+		End
+
+		Select ud.ID DesignationID,ud.user_id MemID,(u.firstName +' '+u.lastName) FullName,
+		d.designation Designation
+		from tbl_user_designation ud
+		left join stNamelist u on u.id=ud.user_id and u.del_flag='N'
+		left join tbl_designation d on d.ID=ud.designation_id and d.sch_id=ud.sch_id and d.is_del='N'
+		where ud.sch_id=@schid
+		and ud.is_del='N' and case when @userid='-1' then '1' else ud.created_by end = case when @userid='-1' then '1' else @userid end
+		and case when @designationid='-1' then '1' else ud.designation_id end = case when @designationid='-1' then '1' else @designationid end
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') 
+		Begin
+			Select 202 StatusCode, 'UserID does not exists' Message
+			return;
+		ENd
+
+		If not exists(Select 'm' from tbl_user_designation where sch_id=@schid and ID=@designationid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Designation does not exists' Message
+			return;
+		End
+		delete from tbl_user_designation where ID=@designationid and sch_id=@schid;		
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

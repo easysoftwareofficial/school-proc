@@ -1,0 +1,99 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_blog]    Script Date: 6/21/2023 10:03:06 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_blog](
+	@schid nvarchar(50) = null,
+	@primary int = null,
+	@flag nvarchar(50) = null,
+	@imgurl nvarchar(50) = null,
+	@categoryid int = null,
+	@count int = null,
+	@via int = null,
+	@blogid int = null
+)AS
+BEGIN
+	
+	If(@flag = 'blogcategory')
+	Begin
+		Select ID CategoryID, category_name Category, slug Slug, is_primary IsPrimary
+		from tbl_blog_category
+		where sch_id=@schid and 
+		case @primary when '-1' then '1' else is_primary end=case when @primary='-1' then'1' else @primary end and is_del='N'
+		return;
+	End
+	
+	If(@flag = 'catwiseblog')
+	Begin
+		If not exists(Select 'm' from tbl_blog_category where ID=@categoryid and is_del='N') and @categoryid<>-1
+		Begin
+			Select 203 StatusCode, 'Blog Category does not exists' Message
+			return;
+		End
+
+		if(@categoryid!='-1')
+		BEGIN
+		Select top(case when @count='-1' then 1000 else @count end)
+		p.ID BlogID, title Title, p.slug Slug, c.category_name CategoryName, 
+		(@imgurl+'photo/blog/'+feat_img) FeatImg, excerpt Excerpt, post_view PostView,
+		format(convert(datetime, p.created_date),'yyyy-MM-dd hh:mm:ss tt')  CreatedDate, 
+		(u.firstName+' '+u.lastName) CreatedUser, (@imgurl+'photo/user/'+image) CreatedUserImage
+		from tbl_blog_post p
+		left join tbl_blog_category c on p.category_id=c.ID and c.sch_id=p.sch_id and c.is_del='N'
+		left join stNamelist u on u.id=p.created_by
+		where p.sch_id=@schid and p.is_del='N' and is_published=1 and 
+		case when @via = 1 then p.category_id when @via=2 then p.slug end = @categoryid
+		END
+		ELSE
+		BEGIN
+		Select top(case when @count='-1' then 1000 else @count end)
+		p.ID BlogID, title Title, p.slug Slug, c.category_name CategoryName, 
+		(@imgurl+'photo/blog/'+feat_img) FeatImg, excerpt Excerpt, post_view PostView,
+		format(convert(datetime, p.created_date),'yyyy-MM-dd hh:mm:ss tt')  CreatedDate, 
+		(u.firstName+' '+u.lastName) CreatedUser, (@imgurl+'photo/user/'+image) CreatedUserImage
+		from tbl_blog_post p
+		left join tbl_blog_category c on p.category_id=c.ID and c.sch_id=p.sch_id and c.is_del='N'
+		left join stNamelist u on u.id=p.created_by 
+		where p.sch_id=@schid and p.is_del='N' and is_published=1 
+		END
+		return;
+	End
+
+	If(@flag = 'latestblog')
+	Begin
+		Select top(case when @count='-1' then 1000 else @count end)
+		p.ID BlogID,title Title,category_id CategoryID,c.category_name,p.slug Slug, 
+		(@imgurl+'photo/blog/'+feat_img) FeatImg,excerpt Excerpt, post_view PostView, 
+		p.created_date CreatedDate, (u.firstName+' '+u.lastName) CreatedUser, (@imgurl+'photo/user/'+image) CreatedUserImage
+		from tbl_blog_post p
+		left join tbl_blog_category c on c.ID=p.category_id and c.sch_id=p.sch_id and c.is_del='N'
+		left join stNamelist u on u.id=p.created_by 
+		where p.sch_id=@schid and p.is_del='N' and p.is_published=1 
+		return;
+	End
+
+	If(@flag='bloginfo')
+	Begin
+		If not exists(Select 'm' from tbl_blog_post where is_del='N' and case when @via=1 then ID when @via=2 then slug end = @blogid)
+		Begin
+			Select 201 StatusCode, 'Blog does not exists' Message
+			return;
+		End
+		Update tbl_blog_post set post_view=post_view+1 
+		where sch_id=@schid and case when @via=1 then ID when @via=2 then slug end = @blogid
+		
+		Select
+		p.ID BlogID,title Title,category_id CategoryID,c.category_name CategoryName,p.slug Slug,
+		post Post,
+		(@imgurl+'photo/blog/'+feat_img) "Image",excerpt Excerpt, meta Meta,format(convert(datetime, p.created_date),'yyyy-MM-dd') BlogDate,format(convert(datetime, p.created_date),'yyyy-MM-dd hh:mm:ss tt')  CreatedDate, 
+		post_view PostView, u.firstName+' '+u.lastName CreatedUser, (@imgurl+'photo/user/'+image) CreatedUserImage
+		from tbl_blog_post p
+		left join tbl_blog_category c on c.ID=p.category_id and c.sch_id=p.sch_id and c.is_del='N'
+		left join stNamelist u on u.id=p.created_by 
+		where p.sch_id=@schid and case when @via=1 then p.ID when @via=2 then p.slug end = @blogid 
+		return;
+	End
+END

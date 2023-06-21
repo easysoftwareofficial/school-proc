@@ -1,0 +1,50 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_bulkattenNew]    Script Date: 6/21/2023 10:10:48 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_bulkattenNew] (
+@schid nvarchar(250)=null,
+@deviceid int=null,
+@attendate date=null,
+@attentime nvarchar(50)=null,
+@attenplace nchar(1)=null,
+@i int =1,
+@userid int =null,
+@count int=null,
+@staffid int = null,
+@attendatenepali nvarchar(50)=null,
+@flag nvarchar(150)  = null
+)
+AS
+BEGIN
+	
+	If(@flag='S')
+	Begin
+
+	 set @userid =ISNULL((Select id from stNamelist where device_code=@deviceid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')),'0');
+
+	 if(@userid!='0')
+	 BEGIN
+
+		If exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and checkin_time is not null and attend_date=@attendate )
+		Begin
+			Update tbl_teacher_attendance set checkout_time=@attentime,check_out_place='O',check_out_via='D',updated_by=@userid,updated_date=GETDATE(), "hour"=convert(float(2),DATEDIFF(MINUTE,checkin_time,@attentime))/60
+			where attend_date=@attendate and sch_id=@schid and user_id=@userid 
+			Select 200 StatusCode, 'Success' Message
+			return;
+		End
+		Insert into tbl_teacher_attendance(sch_id,user_id,attend_date,check_in_place,attend_verified,created_by,created_date,
+		updated_by,updated_date,checkin_time,device_code,check_in_via,atten_nep_date,verified_by,is_del) values
+		(@schid,@userid,@attendate,'O','Y',@userid,GETDATE(),@userid,getdate(),@attentime,@deviceid,'D',@attendatenepali,'1','N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	Select 200 StatusCode, 'Success' Message
+	END
+
+END

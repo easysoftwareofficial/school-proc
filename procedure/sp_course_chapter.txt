@@ -1,0 +1,27 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_course_chapter]    Script Date: 6/21/2023 10:11:06 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_course_chapter](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nchar(2) = null,
+	@classid int = null,
+	@subjectid int = null	
+)AS
+Begin
+ 
+
+
+ IF(@flag='S')
+ BEGIN
+  select id ChapterID,chapter_no ChapterNo,chapter_title ChapterTitle,learning_objective LearningObj,'23 Hour' ChapterDuration from tbl_course_chapter where sch_id=@schid and class_id=@classid and subject_id=@subjectid
+   and is_active='A' and is_del='N';
+ return;
+ END
+
+  
+End

@@ -1,0 +1,256 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_attendance_report]    Script Date: 6/21/2023 10:01:45 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_attendance_report](
+	@schid nvarchar(50) = null,
+	@memid int = null,
+	@flag nvarchar(10) = null,
+	@issubjective nchar(1) = null,
+	@subjectid int = null,
+	@dflag nchar(1) = null,
+	@dtflag nvarchar(10) = null,
+	@fromdate nvarchar(50) = null,
+	@todate nvarchar(50) = null,
+	@date nvarchar(50) = null,
+	@todaynepdate nvarchar(50) = null
+)AS
+BEGIN
+   IF(@flag='SR')
+   BEGIN
+	IF(@dflag='N')
+	Begin
+		If exists(Select 'm' from tbl_attendance where english_date=FORMAT(GETDATE(),'yyyy-MM-dd') and sch_id=@schid and is_del='N')
+		Begin
+			If(@dtflag<>'F')
+			Begin
+				Select user_id UserID, A.ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,
+				'12:00 AM' AttenTime,
+				datename(weekday,convert(datetime,a.english_date)) AttenDay,
+				a.attend_status AttenStatus,
+				a.attend_via AttenVia,a.subject_id SubjectID, s.subjectName Subject
+				from tbl_attendance a
+				left join mSheetSubject s on s.id=a.subject_id 
+				where a.sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='N' then a.subject_id else '1' end = case when @issubjective='N' then 0 else '1' end and 
+				case when @issubjective='Y' then a.subject_id else '0' end <> case when @issubjective='Y' then 0 else '1' end and
+				case when @issubjective='Y' and @subjectid<>'-1' then a.subject_id else '1' end = case when @issubjective='Y' and @subjectid<>'-1' then @subjectid else '1' end
+				and case @dtflag when 'A' then '2023-01-13' 
+				when 'T' then english_date
+				when 'SD' then nepali_date
+				when 'SY' then SUBSTRING(nepali_date,1,4)
+				when 'SM' then SUBSTRING(nepali_date,1,7)
+				end = case @dtflag when 'A' then '2023-01-13' 
+				when 'T' then format(GETDATE(),'yyyy-MM-dd') 
+				when 'SD' then @date
+				when 'SY' then @date
+				when 'SM' then @date
+				end 
+				order by AttendDate desc
+				return;
+			End
+
+			If(@dtflag='F')
+			Begin
+				Select user_id UserID, ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate, 
+				'12:00 AM' AttenTime,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_status AttenStatus,
+				a.attend_via AttenVia
+				from tbl_attendance a
+				where sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='Y' then subject_id else '1' end = case when @issubjective='Y' then @subjectid else '1' end
+				and nepali_date<=@todate and nepali_date>=@fromdate
+				order by a.nepali_date desc
+				return;
+			End
+		End
+		Else
+		Begin
+			If(@dtflag<>'F')
+			Begin
+				Select user_id UserID, a.ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,
+				'12:00 AM' AttenTime,
+				datename(weekday,convert(datetime,a.english_date)) AttenDay,
+				a.attend_status AttenStatus,
+				a.attend_via AttenVia,a.subject_id SubjectID, s.subjectName Subject
+				from tbl_attendance a
+				left join mSheetSubject s on s.id=a.subject_id 
+				where a.sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='N' then a.subject_id else '1' end = case when @issubjective='N' then 0 else '1' end and 
+				case when @issubjective='Y' then a.subject_id else '0' end <> case when @issubjective='Y' then 0 else '1' end 
+				and case when @issubjective='Y' and @subjectid<>'-1' then a.subject_id else '1' end = case when @issubjective='Y' and @subjectid<>'-1' then @subjectid else '1' end
+				and case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then english_date
+				when 'SD' then nepali_date
+				when 'SY' then SUBSTRING(nepali_date,1,4)
+				when 'SM' then SUBSTRING(nepali_date,1,7)
+				end = case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then format(GETDATE(),'yyyy-MM-dd') 
+				when 'SD' then @date
+				when 'SY' then @date
+				when 'SM' then @date
+				end 
+				Union
+				Select @memid UserID, '0' AttendID, @todaynepdate AttendDate,'12:00 AM' AttenTime,
+				datename(weekday,GETDATE()) AttenDay,
+				'N' AttenStatus,
+				'N' AttenVia,
+				'0' SubjectID,
+				'N' Subject
+				where @issubjective='N'
+				order by AttendDate desc
+				return;
+			End
+
+			If(@dtflag='F')
+			Begin
+				Select user_id UserID, ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate, 
+				'12:00 AM' AttenTime,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_status AttenStatus,
+				a.attend_via AttenVia
+				from tbl_attendance a
+				where sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='Y' then subject_id else '1' end = case when @issubjective='Y' then @subjectid else '1' end
+				and nepali_date<=@todate and nepali_date>=@fromdate
+				order by a.nepali_date desc
+				return;
+			End
+		End
+	End
+
+	IF(@dflag='E')
+	Begin
+		If exists(Select 'm' from tbl_attendance where english_date=FORMAT(GETDATE(),'yyyy-MM-dd') and sch_id=@schid and is_del='N')
+		Begin
+			If(@dtflag<>'F')
+			Begin
+				Select user_id UserID, a.ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,'12:00 AM' AttenTime, a.attend_status AttenStatus,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_via AttenVia,a.subject_id SubjectID, s.subjectName Subject
+				from tbl_attendance a
+				left join mSheetSubject s on s.id=a.subject_id 
+				where a.sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='N' then a.subject_id else '1' end = case when @issubjective='N' then 0 else '1' end and 
+				case when @issubjective='Y' then a.subject_id else '0' end <> case when @issubjective='Y' then 0 else '1' end and
+				case when @issubjective='Y' and @subjectid<>'-1' then a.subject_id else '1' end = case when @issubjective='Y' and @subjectid<>'-1' then @subjectid else '1' end
+				and case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then english_date 
+				when 'SD' then english_date
+				when 'SY' then SUBSTRING(english_date,1,4)
+				when 'SM' then SUBSTRING(english_date,1,7)
+				end = case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then format(GETDATE(),'yyyy-MM-dd') 
+				when 'SD' then @date
+				when 'SY' then @date
+				when 'SM' then @date
+				end 
+				order by a.nepali_date desc
+				return;
+			End
+
+			If(@dtflag='F')
+			Begin
+				Select user_id UserID, ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,'12:00 AM' AttenTime, a.attend_status AttenStatus,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_via AttenVia
+				from tbl_attendance a
+				where sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='Y' then subject_id else '1' end = case when @issubjective='Y' then @subjectid else '1' end
+				and nepali_date<=@todate and nepali_date>=@fromdate
+				order by a.nepali_date desc
+				return;
+			End
+		End
+		Else
+		Begin
+			If(@dtflag<>'F')
+			Begin
+				Select user_id UserID, a.ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,'12:00 AM' AttenTime, a.attend_status AttenStatus,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_via AttenVia,a.subject_id SubjectID, s.subjectName Subject
+				from tbl_attendance a
+				left join mSheetSubject s on s.id=a.subject_id 
+				where a.sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='N' then a.subject_id else '1' end = case when @issubjective='N' then 0 else '1' end and 
+				case when @issubjective='Y' then a.subject_id else '0' end <> case when @issubjective='Y' then 0 else '1' end and
+				case when @issubjective='Y' and @subjectid<>'-1' then a.subject_id else '1' end = case when @issubjective='Y' and @subjectid<>'-1' then @subjectid else '1' end
+				and case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then english_date 
+				when 'SD' then english_date
+				when 'SY' then SUBSTRING(english_date,1,4)
+				when 'SM' then SUBSTRING(english_date,1,7)
+				end = case @dtflag when 'A' then '2022-02-02' 
+				when 'T' then format(GETDATE(),'yyyy-MM-dd hh:mm:ss.nnn') 
+				when 'SD' then @date
+				when 'SY' then @date
+				when 'SM' then @date
+				end 
+				Union
+				Select @memid UserID, '0' AttendID, format(GETDATE(),'yyyy-MM-dd hh:mm:ss.nnn') AttendDate,'12:00 AM' AttenTime,
+				datename(weekday,GETDATE()) AttenDay,
+				'N' AttenStatus,
+				'N' AttenVia,
+				'0' SubjectID,
+				'N' Subject
+				where @issubjective='N'
+				order by AttendDate desc
+				return;
+			End
+
+			If(@dtflag='F')
+			Begin
+				Select user_id UserID, ID AttendID, a.nepali_date+' '+isnull(a.time,'00:00:00') AttendDate,'12:00 AM' AttenTime, a.attend_status AttenStatus,
+				datename(weekday,a.english_date) AttenDay,
+				a.attend_via AttenVia
+				from tbl_attendance a
+				where sch_id=@schid and user_id=@memid and is_del='N' and
+				case when @issubjective='Y' then subject_id else '1' end = case when @issubjective='Y' then @subjectid else '1' end
+				and nepali_date<=@todate and nepali_date>=@fromdate
+				order by a.nepali_date desc
+				return;
+			End
+		End
+	End
+ END
+
+   IF(@flag='SS')
+   BEGIN
+      IF(@issubjective='N')
+	  BEGIN 
+	    
+		if(@dtflag='SM')
+		BEGIN
+	    select distinct SUBSTRING(nepali_date,6,2) MonthID,'12' PresentCT,'10' AbsentCT from tbl_attendance where user_id='3';
+		return;
+		END
+
+		if(@dtflag='SY')
+		BEGIN
+	    select distinct SUBSTRING(nepali_date,1,4) Year,'12' PresentCT,'10' AbsentCT from tbl_attendance where user_id='3';
+		return;
+		END
+	  END
+
+	  IF(@issubjective='Y')
+	  BEGIN 
+	    
+		if(@dtflag='SM')
+		BEGIN
+	    select distinct subjectName Subject,SUBSTRING(nepali_date,6,2) MonthID,'12' PresentCT,'10' AbsentCT from tbl_attendance,mSheetSubject where tbl_attendance.subject_id=mSheetSubject.id and user_id=@memid;
+		return;
+		END
+
+		if(@dtflag='SY')
+		BEGIN
+	    select distinct subjectName Subject,SUBSTRING(nepali_date,1,4) Year,'12' PresentCT,'10' AbsentCT from tbl_attendance,mSheetSubject where tbl_attendance.subject_id=mSheetSubject.id and user_id=@memid;
+		return;
+		END
+	  END
+
+   END
+END

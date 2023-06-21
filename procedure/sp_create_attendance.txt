@@ -1,0 +1,66 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_create_attendance]    Script Date: 6/21/2023 10:12:37 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_create_attendance](  
+	@schid nvarchar(250)=null,
+	@userid int=null,		
+	@attendate date=null,
+	@attentime nvarchar(50)=null,
+	@attenstatus nvarchar(5)=null,
+	@attenplace nvarchar(5)=null,	
+	@ssid nvarchar(50)=null,
+	@attenvia nvarchar(5)= null,
+	@attendatenepali nvarchar(50)=null,
+	@flag nvarchar(2) = null
+)AS
+BEGIN		
+		
+		If exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and check_in_place is not null and attend_date=@attendate and @attenstatus='I' )
+		Begin
+			Select 201 StatusCode, 'Already checked in' Message
+			return;
+		End
+		If @attenstatus='O'
+		Begin
+			If not exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and checkin_time is not null and user_id=@userid and attend_date=@attendate )
+			Begin
+				Select 202 StatusCode, 'Not check in' Message
+				return;
+			End
+			If exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and attend_date=@attendate and checkout_time is not null )
+			Begin
+				Select 203 StatusCode, 'Already checked out' Message
+				return;
+			End
+			Update tbl_teacher_attendance set checkout_time=@attentime, updated_by=@userid,check_out_via=@attenvia,check_out_place=@attenplace,
+			updated_date=GETDATE(), "hour"=convert(float(2),DATEDIFF(MINUTE,checkin_time,@attentime))/60
+			where attend_date=@attendate and sch_id=@schid 
+			and user_id=@userid; 
+			Select ISNULL(checkin_time,'No Checkin') CheckIn,ISNULL(checkout_time,'No Checkout') CheckOut from tbl_teacher_attendance where sch_id=@schid  and user_id=@userid and attend_date=@attendate
+	     	return;
+		End
+
+		if(@attenvia='M' and @attenplace='O')
+		begin
+		Insert into tbl_teacher_attendance(sch_id,user_id,attend_date,check_in_place,attend_verified,created_by,updated_by,created_date,
+		updated_date,checkin_time,device_code,check_in_via,atten_nep_date,is_del)
+		 values
+		(@schid,@userid,@attendate,@attenplace,'Y',@userid,@userid,GETDATE(), getdate(),@attentime,'0',@attenvia,@attendatenepali,'N')
+		Select ISNULL(checkin_time,'No Checkin') CheckIn,ISNULL(checkout_time,'No Checkout') CheckOut from tbl_teacher_attendance where sch_id=@schid  and user_id=@userid and attend_date=@attendate
+	     
+		end
+		else
+		begin
+			Insert into tbl_teacher_attendance(sch_id,user_id,attend_date,check_in_place,attend_verified,created_by,updated_by,created_date,
+		updated_date,checkin_time,device_code,check_in_via,atten_nep_date,is_del)
+		 values
+		(@schid,@userid,@attendate,@attenplace,'N',@userid,@userid,GETDATE(), getdate(),@attentime,'0',@attenvia,@attendatenepali,'N')
+		Select ISNULL(checkin_time,'No Checkin') CheckIn,ISNULL(checkout_time,'No Checkout') CheckOut from tbl_teacher_attendance where sch_id=@schid  and user_id=@userid and attend_date=@attendate
+	     	
+		end
+		return;
+END

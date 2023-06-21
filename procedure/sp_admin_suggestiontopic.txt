@@ -1,0 +1,68 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_suggestiontopic]    Script Date: 6/21/2023 9:58:07 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_suggestiontopic](
+	@schid nvarchar(50) = null,
+	@userid int= null,
+	@authcode nvarchar(250) = null,
+	@topic nvarchar(250) = null,
+	@flag nvarchar(10) = null,
+	@topicid int = null
+)AS
+BEGIN	
+	If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>'-1'
+	Begin
+		Select 202 StatusCode, 'UserID does not exists' Message
+		return;
+	ENd
+
+	IF(@flag='I')
+	Begin
+		Insert into tbl_suggestion_topic(sch_id,user_id,topic,created_by,updated_by,
+		created_date,updated_date,is_del) values
+		(@schid,@userid,@topic,@userid,@userid,GETDATE(),GETDATE(),'N')
+		Select 200 StatusCode, 'Success' Message
+		return;
+	end
+
+	If(@flag='U')
+	Begin
+		If not exists(Select 'm' from tbl_suggestion_topic where ID=@topicid)
+		Begin
+			Select 203 StatusCode, 'Topic does not exists' Message
+			return;
+		End
+		Update tbl_suggestion_topic set topic=@topic,updated_by=@userid,
+		updated_date=GETDATE()
+		where sch_id=@schid and ID=@topicid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		Select ID TopicID, topic Topic, 
+		(Select count(1) from tbl_suggestion where topic_id=t.ID and is_del='N' and sch_id=t.sch_id) NoOfSuggestion
+		from tbl_suggestion_topic t
+		where sch_id=@schid and is_del='N' and
+		case when @userid='-1' then '1' else created_by end = case when @userid='-1' then '1' else @userid end
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from tbl_suggestion_topic where ID=@topicid)
+		Begin
+			Select 203 StatusCode, 'Topic does not exists' Message
+			return;
+		End
+		Update tbl_suggestion_topic set is_del='Y', updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@topicid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END

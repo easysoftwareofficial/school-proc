@@ -1,0 +1,87 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_suggestion]    Script Date: 6/21/2023 9:57:38 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_suggestion](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@suggestionid int = null,
+	@status nchar(1) = null,
+	@authcode nvarchar(250) = null,
+	@remarks nvarchar(250) = null,
+	@notify nchar(1) = null,
+	@flag nvarchar(10) = null,
+	@topicid int = null
+)AS
+BEGIN	
+	If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>'-1'
+	Begin
+		Select 202 StatusCode, 'UserID does not exists' Message
+		return;
+	ENd
+	IF(@flag='US')
+	Begin
+		If not exists(Select 'm' from tbl_suggestion where ID=@suggestionid)
+		Begin
+			Select 203 StatusCode, 'SuggestionID does not exists' Message
+			return;
+		End
+		Update tbl_suggestion set status_by=@userid, suggestion_status=@status,remarks=@remarks,
+		updated_by=@userid, updated_date=GETDATE()
+		where sch_id=@schid and ID=@suggestionid;
+
+	    Select s.ID SuggestionID,(u.firstName+' '+u.lastName) FullName,topic_id TopicID, st.topic Topic, title Title,
+		description Description,suggestion_status SuggestionStatusID,case s.suggestion_status 
+		when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Rejected'
+		end  SuggestionStatus,status_by StatusByID, (select top 1 full_name from tbl_user where user_id=status_by) StatusBy,		
+		remarks Remarks,s.created_date CreatedDate,
+		FORMAT(CAST(s.created_date as DATE),'yyyy-MM-dd hh:mm:ss tt') CreatedDateTime
+		from tbl_suggestion s
+		left join stNamelist u on u.id=s.user_id
+		left join tbl_suggestion_topic st on st.ID=s.topic_id
+		where s.sch_id=@schid and s.user_id=(select user_id from tbl_suggestion where ID=@suggestionid)		
+		and case when @topicid ='-1' then '1' else s.topic_id end = case when @topicid='-1' then '1' else @topicid end 
+		and s.is_del = 'N' order by s.ID desc;
+		return;
+	End
+
+
+	If(@flag='S')
+	Begin
+		
+		Select s.ID SuggestionID,(u.firstName+' '+u.lastName) FullName,topic_id TopicID, st.topic Topic, title Title,
+		description Description,suggestion_status SuggestionStatusID,case s.suggestion_status 
+     	when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Rejected'
+		end  SuggestionStatus,status_by StatusByID, (select top 1 full_name from tbl_user where user_id=status_by) StatusBy,		
+		remarks Remarks,s.created_date CreatedDate,
+		FORMAT(CAST(s.created_date as DATE),'yyyy-MM-dd hh:mm:ss tt') CreatedDateTime
+		from tbl_suggestion s
+		left join stNamelist u on u.id=s.user_id
+		left join tbl_suggestion_topic st on st.ID=s.topic_id
+		where s.sch_id=@schid 
+		and case when @userid='-1' then '1' else s.created_by end = case when @userid='-1' then '1' else @userid end
+		and case when @topicid ='-1' then '1' else s.topic_id end = case when @topicid='-1' then '1' else @topicid end 
+		and s.is_del = 'N' order by s.ID desc;
+		return;
+	end
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from tbl_suggestion where ID=@suggestionid)
+		Begin
+			Select 203 StatusCode, 'SuggestionID does not exists' Message
+			return;
+		End
+		Update tbl_suggestion set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+		where sch_id=@schid and ID=@suggestionid
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+END
