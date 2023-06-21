@@ -1,0 +1,132 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_teaching_subject]    Script Date: 6/21/2023 2:18:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_teaching_subject](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@values XML = null,
+	@teacherid int = null,
+	@teachingid int = null
+)
+AS
+BEGIN
+	If(@flag='i')
+	Begin
+		
+		If not exists (Select 'm' from stClass with (nolock) where id = @classid)
+		Begin
+			Select 202 StatusCode, 'Class does not exists' Message
+			return;
+		End
+		If not exists (Select 'm' from stSection with (nolock) where id = @sectionid)
+		Begin
+			Select 203 StatusCode, 'Section does not exists' Message
+			return;
+		End
+		
+		
+
+		If not exists (Select 'm' from stNamelist with (nolock) where id = @teacherid and (appType='Teacher' or appType='Admin'))
+		Begin
+			Select 204 StatusCode, 'User does not exists' Message
+			return;
+		End
+		If not exists (Select 'm' from stNamelist with (nolock) where id = @userid)
+		Begin
+			Select 207 StatusCode, 'User not found' Message
+			return;
+		End
+
+		
+		declare @temp table(ID int identity(1,1) primary key, SubjectID int )
+		Insert into @temp
+		Select subject_id=Node.Data.value('(SubjectID)[1]', 'INT')
+		from @values.nodes('/ArrayOfValue/Value') Node(Data)
+
+		declare @i int = 1, @count int=(Select count(1) from @temp)
+		while (@count!=0)
+		Begin
+			declare @subject_id int = (Select SubjectID from @temp where ID=@i), @msg nvarchar(50) = ''
+			if exists (Select 'm' from tbl_teaching_subject where user_id=@teacherid and class_id=@classid and section_id=@sectionid 
+			and subject_id=@subject_id and sch_id=@schid)
+			Begin
+				set @msg = @msg+''+concat(@teacherid,', ')
+			End
+			else
+			Begin
+				Insert into tbl_teaching_subject(sch_id,user_id,class_id,section_id,
+				subject_id,created_by,updated_by,created_date,updated_date) values
+				( @schid,@teacherid,@classid,@sectionid,@subject_id,@userid,@userid,
+				GETDATE(),GETDATE())
+			End
+			set @i=@i+1
+			set @count=@count-1
+		End
+		If(@msg<>'')
+		Begin
+			Select 205 StatusCode, 'Subject already assigned for '+@msg Message
+			return;
+		End
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+
+	If(@flag='D')
+	Begin
+	
+		If not exists (Select 'm' from tbl_teaching_subject with (nolock) where ID=@teachingid and sch_id=@schid)
+		Begin
+			Select 202 StatusCode, 'Teaching does not exists' Message
+			return;
+		End
+		If not exists (Select 'm' from stNamelist with (nolock) where id = @userid)
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+		delete from tbl_teaching_subject where sch_id=@schid and created_by=@userid and ID=@teachingid 
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+
+	If(@flag='s')
+	Begin
+	
+		If not exists (Select 'm' from stNamelist with (nolock) where id=@teacherid and (appType='Teacher' or appType='Admin'))
+		Begin
+			Select 202 StatusCode, 'Teacher does not exists' Message
+			return;
+		End
+		If not exists (Select 'm' from stNamelist with (nolock) where id = @userid) and @userid<>-1
+		Begin
+			Select 203 StatusCode, 'User does not exists' Message
+			return;
+		End
+		Select ts.ID TeachingID, ts.class_id ClassID, (select distinct clName from stClass where id=ts.class_id) ClassName,
+		ts.section_id SectionID,
+		(select distinct secName from stSection where id=ts.section_id) SectionName,
+		ts.subject_id SubjectID,
+		(select distinct subjectName from mSheetSubject where classID=ts.class_id and id=ts.subject_id) SubjectName, 
+		'0' NoOfTeacher
+		from tbl_teaching_subject ts
+		where		
+		ts.sch_id=@schid and ts.user_id=@teacherid;
+
+		--c.class_id=ts.class_id and c.sch_id=@schid and c.sch_id=ts.sch_id and
+		--s.section_id = ts.section_id and s.sch_id=@schid and s.sch_id=ts.sch_id  and
+		--sub.subject_id = ts.subject_id and sub.sch_id=@schid and sub.sch_id=ts.sch_id and
+		--ts.sch_id=@schid and ts.user_id=@teacherid 
+		--and case when @userid='-1' then '1' else ts.user_id end = case when @userid='-1' then '1' else @userid end
+		return;
+	End
+
+END

@@ -1,0 +1,120 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_log_book]    Script Date: 6/21/2023 2:26:14 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER proc [dbo].[sp_admin_log_book](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nchar(2) = null,
+	@memid int = null,
+	@classid int = null,
+	@sectionid int = null,
+	@subjectid int = null,
+	@lessonid int = null,
+	@lessonno int = null,
+	@pageno int = null,
+	@lesson nvarchar(500) = null,
+	@assignmentgiven nvarchar(500) = null,
+	@date nvarchar(50) = null
+)AS
+Begin
+ 
+ IF(@flag='i')
+ BEGIN
+
+ insert into tbl_log_book
+ (sch_id,user_id,class_id,section_id,subject_id,log_date,lesson_no,page_no,lesson,assignment_given,created_date,updated_date,created_by,updated_by,is_del)
+ values(@schid,@memid,@classid,@sectionid,@subjectid,@date,@lessonno,@pageno,@lesson,@assignmentgiven,GETDATE(),GETDATE(),@userid,@userid,'N');
+  
+  
+  select lb.id LessonID,lb.user_id MemID,lb.class_id ClassID,lb.section_id SectionID,lb.subject_id SubjectID,
+  (select subjectName from mSheetSubject s where  s.id=lb.subject_id) Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,lb.updated_date LastUpdatedDate,
+  u.firstName+' '+u.lastName FullName
+  from tbl_log_book lb
+  left join stNamelist u on  u.id=lb.user_id 
+  where log_date=@date and lb.sch_id=@schid and lb.is_del='N' and
+  case when @memid='-1' then '1' else lb.user_id end = case when @memid='-1' then '1' else @memid end 
+  and
+  case when @subjectid='-1' then '1' else lb.subject_id end = case when @subjectid='-1' then '1' else @subjectid end 
+  
+ return;
+ END
+
+ IF(@flag='S')
+ BEGIN
+  select lb.id LessonID,lb.user_id MemID,lb.class_id ClassID,lb.section_id SectionID,lb.subject_id SubjectID,
+  (select subjectName from mSheetSubject s where  s.id=lb.subject_id) Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,lb.updated_date LastUpdatedDate,
+  u.firstName+' '+u.lastName FullName
+  from tbl_log_book lb
+  left join stNamelist u on  u.id=lb.user_id 
+  where log_date=@date and lb.sch_id=@schid and lb.is_del='N' and
+  case when @memid='-1' then '1' else lb.user_id end = case when @memid='-1' then '1' else @memid end 
+  and
+  case when @subjectid='-1' then '1' else lb.subject_id end = case when @subjectid='-1' then '1' else @subjectid end 
+  
+ return;
+ END
+
+  IF(@flag='U')
+ BEGIN
+
+  if not exists(select 'M' from tbl_log_book where sch_id=@schid and id=@lessonid)
+ BEGIN
+ select 201 StatusCode,'Lesson does not exists.' Message;
+ return;
+ END;
+ update tbl_log_book set lesson_no=@lessonno,page_no=@pageno,lesson=@lesson,section_id=@sectionid,
+ assignment_given=@assignmentgiven,updated_date=GETDATE(),
+ updated_by=@userid where sch_id=@schid and id=@lessonid
+  select lb.id LessonID,lb.user_id MemID,lb.class_id ClassID,lb.section_id SectionID,lb.subject_id SubjectID,
+  (select subjectName from mSheetSubject s where  s.id=lb.subject_id) Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,lb.updated_date LastUpdatedDate,
+  u.firstName+' '+u.lastName FullName
+  from tbl_log_book lb
+  left join stNamelist u on  u.id=lb.user_id 
+  where log_date=@date and lb.sch_id=@schid and lb.is_del='N' and
+  case when @memid='-1' then '1' else lb.user_id end = case when @memid='-1' then '1' else @memid end 
+  and
+  case when @subjectid='-1' then '1' else lb.subject_id end = case when @subjectid='-1' then '1' else @subjectid end 
+  
+ return;
+ END
+
+
+
+  IF(@flag='R')
+ BEGIN
+
+ if not exists(select 'M' from tbl_log_book where sch_id=@schid and id=@lessonid)
+ BEGIN
+ select 201 StatusCode,'Lesson does not exists.' Message;
+ return;
+ END;
+ update tbl_log_book set is_del='Y',updated_by=@userid,updated_date=GETDATE()
+ where sch_id=@schid and id=@lessonid;
+
+ if not exists(select 'M' from tbl_log_book where log_date=@date and sch_id=@schid and is_del='N' and user_id=@memid)
+ BEGIN
+ select 200 StatusCode,'Success' Message;
+  return;
+ END
+ ELSE
+ BEGIN
+  select lb.id LessonID,lb.user_id MemID,lb.class_id ClassID,lb.section_id SectionID,lb.subject_id SubjectID,
+  (select subjectName from mSheetSubject s where  s.id=lb.subject_id) Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,lb.updated_date LastUpdatedDate,
+  u.firstName+' '+u.lastName FullName
+  from tbl_log_book lb
+  left join stNamelist u on  u.id=lb.user_id 
+  where log_date=@date and lb.sch_id=@schid and lb.is_del='N' and
+  case when @memid='-1' then '1' else lb.user_id end = case when @memid='-1' then '1' else @memid end 
+  and
+  case when @subjectid='-1' then '1' else lb.subject_id end = case when @subjectid='-1' then '1' else @subjectid end 
+  
+ return;
+ END;
+ END
+
+End

@@ -1,0 +1,31 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_upcoming_event]    Script Date: 6/21/2023 2:20:07 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_upcoming_event](
+	@schid nvarchar(50) = null,
+	@count int = null,
+	@imgurl nvarchar(250) = null
+)AS
+BEGIN
+	
+	Select top(case when @count='-1' then '1000' else @count end) * from
+	(Select
+	ID EventID, title Title, description Description, is_holiday IsHoliday, nepali_date NepaliDate,
+	english_date EnglishDate, 'C' EventType ,'' Banner,(DATEDIFF(DAY,GETDATE(),english_date)) DaysRemaining,
+	'-' Venue
+	from tbl_cal_event
+	where del_flag='N' and sch_id=@schid and english_date>=format(GETDATE(),'yyyy-MM-dd')
+	Union
+	Select ID EventID, title Title, description Description, 'N' IsHoliday, nepali_date_from NepaliDate,
+	english_date_from EnglishDate, 'E' EventType, (@imgurl+'photo/event/'+banner) Banner,
+	(DATEDIFF(DAY,GETDATE(),english_date_from)) DaysRemaining,venue Venue
+	from tbl_event
+	where del_flag='N' and sch_id=@schid and english_date_from>=format(GETDATE(),'yyyy-MM-dd')) a
+	order by a.EnglishDate asc
+	
+	return;
+END

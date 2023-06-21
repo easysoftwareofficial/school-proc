@@ -1,0 +1,20 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_suggestion_topic]    Script Date: 6/21/2023 2:18:27 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_suggestion_topic](
+	@schid nvarchar(50) = null,
+	@flag nvarchar(10) = null
+)AS
+BEGIN
+	If(@flag='S')
+	Begin
+		Select ID TopicID, topic Topic
+		from tbl_suggestion_topic
+		where sch_id=@schid and is_del = 'N'
+		return;
+	End
+END

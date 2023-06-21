@@ -1,0 +1,74 @@
+USE [gajurmukhiDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_marksheet_lst]    Script Date: 6/21/2023 2:24:42 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[sp_marksheet_lst]
+(@flag				 VARCHAR(2) = NULL,
+ @schid            VARCHAR(10)   = NULL, 
+ @classid          INT           = NULL, 
+ @sectionid        INT           = NULL, 
+ @termid           INT           = NULL, 
+ @userid  INT           = NULL, 
+ @mark_sheet_src   VARCHAR(500)  = NULL, 
+ @markstype  VARCHAR(5)    = NULL, 
+ @created_user_id          INT           = NULL, 
+ @mark_sheet_table MARKSHEET_PDF READONLY
+)
+AS
+     BEGIN
+         IF @flag='i'
+             BEGIN
+                 IF EXISTS
+                 (
+                     SELECT 'N'
+                     FROM tbl_report_card
+                     WHERE sch_id = @schid
+                           AND class_id = @classid
+                           AND section_id = @sectionid
+                           AND term_id = @termid
+                 )
+                     DELETE tbl_report_card
+                     WHERE sch_id = @schid
+                           AND class_id = @classid
+                           AND section_id = @sectionid
+                           AND term_id = @termid;
+                 IF EXISTS
+                 (
+                     SELECT 'N'
+                     FROM @mark_sheet_table
+                 )
+                     INSERT INTO tbl_report_card
+                     (sch_id, 
+                      class_id, 
+                      section_id, 
+                      term_id, 
+                      user_id, 
+                      mark_sheet_name, 
+                      mark_sheet_src, 
+                      report_type, 
+                      created_by,
+                      created_date,
+							 is_allow,
+							 is_del
+                     )
+                            SELECT @SchID, 
+                                   @ClassID, 
+                                   @SectionID, 
+                                   @TermID, 
+                                   UserID, 
+                                   RegistrationNum, 
+                                   @mark_sheet_src, 
+                                   @markstype, 
+                                   @created_user_id, 
+                                   GETDATE(),
+								   'Y',
+								   'N'
+                            FROM @mark_sheet_table;
+                 SELECT 200 StatusCode, 'split SuccessFull' Message, 'GeneratedFiles' data;
+             END;            
+     END;
+
+

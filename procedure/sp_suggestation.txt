@@ -1,0 +1,105 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_suggestion]    Script Date: 6/21/2023 2:17:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_suggestion](
+	@schid nvarchar(50) = null,
+	@memid int = null,
+	@topicid int = null,
+	@title nvarchar(250) = null,
+	@description nvarchar(500) = null,
+	@suggestionid int = null,
+	@flag nvarchar(10) = null
+)AS
+BEGIN
+	
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@memid) 
+		Begin
+			Select 202 StatusCode, 'MemID does not exists' Message
+			return;
+		ENd
+		If not exists(Select 'm' from tbl_suggestion_topic where sch_id=@schid and ID=@topicid and is_del='N')
+		Begin
+			Select 203 StatusCode, 'Topic does not exists' Message
+			return;
+		End
+		Insert into tbl_suggestion(sch_id,user_id,topic_id,title,description,created_by,created_date,
+		updated_by,updated_date,is_del,suggestion_status) values
+		(@schid,@memid,@topicid,@title,@description,@memid,FORMAT(GETDATE(),'yyyy-MM-dd'),@memid,FORMAT(GETDATE(),'yyyy-MM-dd'),'N','P')
+		Select s.ID SuggestionID,st.topic Topic,s.title Title,s.description Description,
+		case s.suggestion_status 
+     	when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Rejected'
+		end Status,
+		(u.firstName+' '+u.lastName) StatusBy,
+		s.remarks Remarks,
+		s.created_date CreatedDate
+		from tbl_suggestion s
+		left join tbl_suggestion_topic st on st.ID=s.topic_id and st.is_del='N' and s.sch_id=st.sch_id
+		left join stNamelist u on u.id = s.status_by
+		where s.sch_id=@schid and s.user_id=@memid and s.is_del='N'
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@memid) 
+		Begin
+			Select 202 StatusCode, 'MemID does not exists' Message
+			return;
+		ENd
+		Select s.ID SuggestionID,st.topic Topic,s.title Title,s.description Description,
+		case s.suggestion_status 
+     	when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Rejected'
+		end Status,
+		(u.firstName+' '+u.lastName) StatusBy,
+		s.remarks Remarks,
+		s.created_date CreatedDate
+		from tbl_suggestion s
+		left join tbl_suggestion_topic st on st.ID=s.topic_id and st.is_del='N' and s.sch_id=st.sch_id
+		left join stNamelist u on u.id = s.status_by
+		where s.sch_id=@schid and s.user_id=@memid and s.is_del='N'
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from tbl_suggestion where ID=@suggestionid and is_del='N')
+		Begin
+			Select 204 StatusCode, 'SuggestionID does not exists' Message
+			return;
+		End
+		Update tbl_suggestion set is_del='Y', updated_by=@memid, updated_date=FORMAT(GETDATE(),'yyyy-MM-dd')
+		where ID=@suggestionid and sch_id=@schid;
+
+		 if exists(select  'M'  from tbl_leave where sch_id=@schid and user_id = @memid and is_del='N')
+		  BEGIN
+		Select s.ID SuggestionID,st.topic Topic,s.title Title,s.description Description,
+		case s.suggestion_status 
+     	when 'P' then 'Pending'
+		when 'A' then 'Approved'
+		when 'R' then 'Rejected'
+		end Status,
+		(u.firstName+' '+u.lastName) StatusBy,
+		s.remarks Remarks,
+		s.created_date CreatedDate
+		from tbl_suggestion s
+		left join tbl_suggestion_topic st on st.ID=s.topic_id and st.is_del='N' and s.sch_id=st.sch_id
+		left join stNamelist u on u.id = s.status_by
+		where s.sch_id=@schid and s.user_id=@memid and s.is_del='N'
+		return;
+	End
+	ELSE
+	Begin
+	select 200 StatusCode,'success' Message;
+	End;
+	End
+END

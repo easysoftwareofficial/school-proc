@@ -1,0 +1,51 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_payment_report]    Script Date: 6/21/2023 2:39:03 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER procedure [dbo].[sp_payment_report](
+@schid nvarchar(50)=null,
+@memid varchar(50)=null,
+@flag varchar(50)=null,
+@gateway varchar(50)=null,
+@Dtflag varchar(50)=null,
+@from varchar(50)=null,
+@to varchar(50)=null,
+@values varchar(250)=null,
+@paystatus varchar(250)=null,
+@imgurl varchar(250)=null
+)
+AS
+BEGIN
+
+  if(@flag='R')
+  BEGIN
+    --select * from tbl_voucher;
+	if(@Dtflag='S')
+	BEGIN
+		select amount Amount,gateway Gateway,status Status,FORMAT(CAST(g.created_date as datetime),'yyyy-MM-dd') CreatedDate 
+		from [tbl_gateway_response] g,stNamelist u where  g.user_id=u.id and 
+		case when @memid=-1 then '1' else g.user_id end = case when @memid=-1 then '1' else @memid end and
+		case when @gateway='-1' then '1' else g.gateway end = case when @gateway='-1' then '1' else @gateway end and
+		case when @paystatus='-1' then '1' else g.status end = case when @paystatus='-1' then '1' else @paystatus end and
+		FORMAT(CAST(g.created_date as datetime),'yyyy-MM-dd')=@values
+		return;
+	END;
+
+	if(@Dtflag='F')
+	BEGIN
+	
+	select amount Amount,gateway Gateway,status Status,FORMAT(CAST(g.created_date as datetime),'yyyy-MM-dd') CreatedDate 
+		from [tbl_gateway_response] g,stNamelist u where g.user_id=u.id and 
+		case when @memid=-1 then '1' else g.user_id end = case when @memid=-1 then '1' else @memid end and
+		case when @gateway='-1' then '1' else g.gateway end = case when @gateway='-1' then '1' else @gateway end and
+		case when @paystatus='-1' then '1' else g.status end = case when @paystatus='-1' then '1' else @paystatus end and
+		FORMAT(CAST(g.created_date as datetime),'yyyy-MM-dd')>=@from and FORMAT(CAST(g.created_date as datetime),'yyyy-MM-dd')<=@to;
+		
+	return;
+	END;
+	END;
+END

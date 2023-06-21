@@ -1,0 +1,140 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_study_material]    Script Date: 6/21/2023 2:35:54 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_study_material](
+	@schid nvarchar(50) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@flag nvarchar(10) = null,
+	@studyalbumid int = null,
+	@imgurl nvarchar(250) = null
+)
+AS
+BEGIN
+	If(@flag='SA')
+	Begin
+		
+		If not exists(Select 'm' from stNamelist where id=@memid )
+		Begin
+			Select 202 StatusCode, 'MemID does not exists' Message
+			return;
+		End	
+		select ID StudyAlbumID,title Title, description Description, 
+		(Select count(1) from tbl_stdy_material where stdy_album=tbl_album_stdy.ID and sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=0 and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and is_del='N') NoOfMaterial,
+		format(convert(datetime,updated_date),'yyyy-MM-dd hh:mm:ss') LastUpdatedDate,
+		format(convert(datetime,updated_date),'dddd') CreatedDay from tbl_album_stdy where sch_id=@schid and class_id=0 and section_id=0 and user_id=0 and is_del='N'
+		UNION
+		select ID StudyAlbumID,title Title, description Description, 
+		(Select count(1) from tbl_stdy_material where stdy_album=tbl_album_stdy.ID and sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=0 and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and is_del='N') NoOfMaterial,
+		format(convert(datetime,updated_date),'yyyy-MM-dd hh:mm:ss') LastUpdatedDate,
+		format(convert(datetime,updated_date),'dddd') CreatedDay from tbl_album_stdy where sch_id=@schid and class_id=@classid and section_id=0 and user_id=0 and is_del='N'
+		UNION
+		select ID StudyAlbumID,title Title, description Description, 
+		(Select count(1) from tbl_stdy_material where stdy_album=tbl_album_stdy.ID and sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=0 and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and is_del='N') NoOfMaterial,
+		format(convert(datetime,updated_date),'yyyy-MM-dd hh:mm:ss') LastUpdatedDate,
+		format(convert(datetime,updated_date),'dddd') CreatedDay from tbl_album_stdy where sch_id=@schid and class_id=@classid and section_id=@sectionid and user_id=0 and is_del='N'
+		UNION
+		select ID StudyAlbumID,title Title, description Description, 
+		(Select count(1) from tbl_stdy_material where stdy_album=tbl_album_stdy.ID and sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=0 and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and is_del='N') NoOfMaterial,
+		format(convert(datetime,updated_date),'yyyy-MM-dd hh:mm:ss') LastUpdatedDate,
+		format(convert(datetime,updated_date),'dddd') CreatedDay from tbl_album_stdy where sch_id=@schid and  user_id=@memid and is_del='N'
+		return;
+	End
+
+	If(@flag='SM')
+	Begin
+	
+		If not exists(Select 'm' from tbl_album_stdy where ID=@studyalbumid and is_del='N' and sch_id=@schid) and @studyalbumid<>-1
+		Begin
+			Select 203 StatusCode, 'StudyAlbumID does not exists' Message
+			return;
+		End
+
+	    if(@studyalbumid='-1')
+		begin
+		select distinct tbl_stdy_material.ID MaterialID, tbl_stdy_material.title Title, tbl_stdy_material.description Description, file_name FileName,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_Type FileType,
+		case file_type 
+		when 'I' then 'Image'
+		when 'P' then 'Pdf'
+		when 'PP' then 'Ppt'
+		when 'U' then 'URL'
+		when 'D' then 'Doc'
+		end FileTypeID, 
+		file_exe Extension, format(convert(datetime,tbl_album_stdy.created_date),'yyyy-MM-dd hh:mm:ss') CreatedDate from tbl_stdy_material,tbl_album_stdy 
+		where tbl_stdy_material.stdy_album=tbl_album_stdy.ID and tbl_stdy_material.sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=0 and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and tbl_album_stdy.is_del='N' and tbl_stdy_material.is_del='N'
+		UNION		
+		select distinct tbl_stdy_material.ID MaterialID, tbl_stdy_material.title Title, tbl_stdy_material.description Description, file_name FileName,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_Type FileType,
+		case file_type 
+		when 'I' then 'Image'
+		when 'P' then 'Pdf'
+		when 'PP' then 'Ppt'
+		when 'U' then 'URL'
+		when 'D' then 'Doc'
+		end FileTypeID, 
+		file_exe Extension, format(convert(datetime,tbl_album_stdy.created_date),'yyyy-MM-dd hh:mm:ss') CreatedDate from tbl_stdy_material,tbl_album_stdy 
+		where stdy_album=tbl_album_stdy.ID and tbl_stdy_material.sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=@classid and tbl_album_stdy.section_id=0 and tbl_album_stdy.user_id=0 and tbl_album_stdy.is_del='N' and tbl_stdy_material.is_del='N'
+		UNION		
+		select distinct tbl_stdy_material.ID MaterialID, tbl_stdy_material.title Title, tbl_stdy_material.description Description, file_name FileName,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_Type FileType,
+		case file_type 
+		when 'I' then 'Image'
+		when 'P' then 'Pdf'
+		when 'PP' then 'Ppt'
+		when 'U' then 'URL'
+		when 'D' then 'Doc'
+		end FileTypeID, 
+		file_exe Extension, format(convert(datetime,tbl_album_stdy.created_date),'yyyy-MM-dd hh:mm:ss') CreatedDate from tbl_stdy_material,tbl_album_stdy 
+		where stdy_album=tbl_album_stdy.ID and tbl_stdy_material.sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=@classid and tbl_album_stdy.section_id=@sectionid and tbl_album_stdy.user_id=0 and tbl_album_stdy.is_del='N' and tbl_stdy_material.is_del='N'
+		UNION		
+		select distinct tbl_stdy_material.ID MaterialID, tbl_stdy_material.title Title, tbl_stdy_material.description Description, file_name FileName,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_Type FileType,
+		case file_type 
+		when 'I' then 'Image'
+		when 'P' then 'Pdf'
+		when 'PP' then 'Ppt'
+		when 'U' then 'URL'
+		when 'D' then 'Doc'
+		end FileTypeID, 
+		file_exe Extension, format(convert(datetime,tbl_album_stdy.created_date),'yyyy-MM-dd hh:mm:ss') CreatedDate from tbl_stdy_material,tbl_album_stdy 
+		where stdy_album=tbl_album_stdy.ID and tbl_stdy_material.sch_id=tbl_album_stdy.sch_id and tbl_album_stdy.class_id=@classid and tbl_album_stdy.section_id=@sectionid and tbl_album_stdy.user_id=@memid and tbl_album_stdy.is_del='N' and tbl_stdy_material.is_del='N'
+		return;
+		end
+
+		Select distinct ID MaterialID, title Title, description Description, file_name FileName,
+		case when file_type='U' then file_url 
+		else @imgurl+'studymaterial/'+file_url
+		end URL, 
+		file_Type FileType,
+		case file_type 
+		when 'I' then 'Image'
+		when 'P' then 'Pdf'
+		when 'PP' then 'Ppt'
+		when 'U' then 'URL'
+		when 'D' then 'Doc'
+		end FileTypeID, 
+		file_exe Extension, format(convert(datetime,created_date),'yyyy-MM-dd hh:mm:ss') CreatedDate
+		from tbl_stdy_material
+		where 
+		is_del='N' and sch_id=@schid and stdy_album=@studyalbumid;
+		return;
+	End
+END
