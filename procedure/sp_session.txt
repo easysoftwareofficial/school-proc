@@ -1,10 +1,11 @@
-USE [gokarneshworlightDB]
+USE [basundharaacademyDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_session]    Script Date: 6/21/2023 2:07:26 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_session]    Script Date: 6/22/2023 10:30:04 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 ALTER proc [dbo].[sp_session](   
 	@schid nvarchar(20) = null,
 	@schname nvarchar(250) = null,
@@ -151,17 +152,12 @@ BEGIN
 	If(@flag='changepassword')
 	Begin
 	
-		If exists(Select 'm' from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
-		Begin
-			Select 205 StatusCode, 'User not allowed to use the app' Message
-			return;
-		End
 		If exists(Select 'm' from stNamelist with(nolock) where is_blocked='Y' and id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
 		Begin
 			Select 206 StatusCode, 'User is blocked. Please contact to school administrator' Message
 			return;
 		end
-		If(Select PWDCOMPARE(@password,(Select apppwd from stNamelist with(nolock) where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))))!=1
+		If not exists(select 'M' from stNamelist where id=@userid and appPWD=@password)
 		Begin
 			Update stnamelist set failed_attempt=isnull(failed_attempt,0)+1 where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
 			If exists(Select 'm' from stNamelist where failed_attempt>10 and id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes'))
@@ -172,7 +168,7 @@ BEGIN
 			return;
 		End
 
-		Update tbl_user set password=PWDENCRYPT(@newpassword) where user_id=@userid
+		Update stNamelist set appPWD=@newpassword where id=@userid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
 		Select 200 StatusCode, 'Success' Message
 		return;
 	End
