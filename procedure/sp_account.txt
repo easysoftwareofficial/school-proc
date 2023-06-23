@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [basundharaacademyDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_account]    Script Date: 6/20/2023 3:50:20 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_account]    Script Date: 6/23/2023 1:53:33 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,8 +8,8 @@ GO
 ALTER proc [dbo].[sp_account](
 	@schid nvarchar(50) = null,
 	@flag nchar(2) = null,
-	@memid int = null,	
-	@academicyear nvarchar(50) = null,
+	@memid int = null,
+	@academicyear nvarchar(250) = null,
 	@fromdate nvarchar(20) = null,
 	@todate nvarchar(20) = null,
 	@dflag nvarchar(10) = null
@@ -32,7 +32,7 @@ BEGIN
 		'		
 		select '+CONVERT(varchar(12), @memid)+' UserID,'+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var1+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
 		union  
-		select '+CONVERT(varchar(12), @memid)+' UserID,'+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var1+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+		select '+CONVERT(varchar(12), @memid)+' UserID,'+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,(credit+dis1+dis2+dis3+dis4+dis5+dis6+dis7+dis8+dis9+dis10+dis11+dis12+dis13+dis14+dis15+dis16+dis17+dis18+dis19+dis20+dis21+dis22+dis23+dis24+dis25+dis26+dis27+dis28+dis29+dis30+dis31+dis32+dis33+dis34+dis35+dis36+dis37+dis38+dis39+dis40+dis41+dis42+dis43+dis44+dis45+dis46+dis47+dis48+dis49+dis50+fine1+fine2+fine3+fine4+fine5+fine6+fine7+fine8+fine9+fine10+fine11+fine12+fine13+fine14+fine15+fine16+fine17+fine18+fine19+fine20+fine21+fine22+fine23+fine24+fine25+fine26+fine27+fine28+fine29+fine30+fine31+fine32+fine33+fine34+fine35+fine36+fine37+fine38+fine39+fine40+fine41+fine42+fine43+fine44+fine45+fine46+fine47+fine48+fine49+fine50) Credit from '+@var1+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
 		';
 
      	declare @temp as table (UserID nvarchar(50),AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(250),Debit nvarchar(50),Credit nvarchar(50))
@@ -42,7 +42,7 @@ BEGIN
 		@temp		
 		EXEC(@selectQuery1);
 
-		select UserID,AccID,Date,Particulars,Debit,Credit from @temp;
+		select UserID,AccID,Date,Particulars,ISNULL(Debit,'0.00') Debit,ISNULL(Credit,'0.00') Credit from @temp;
 
 		return;
 	End
@@ -71,7 +71,7 @@ BEGIN
 		'		
 		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
 		union  
-		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,(credit+dis1+dis2+dis3+dis4+dis5+dis6+dis7+dis8+dis9+dis10+dis11+dis12+dis13+dis14+dis15+dis16+dis17+dis18+dis19+dis20+dis21+dis22+dis23+dis24+dis25+dis26+dis27+dis28+dis29+dis30+dis31+dis32+dis33+dis34+dis35+dis36+dis37+dis38+dis39+dis40+dis41+dis42+dis43+dis44+dis45+dis46+dis47+dis48+dis49+dis50+fine1+fine2+fine3+fine4+fine5+fine6+fine7+fine8+fine9+fine10+fine11+fine12+fine13+fine14+fine15+fine16+fine17+fine18+fine19+fine20+fine21+fine22+fine23+fine24+fine25+fine26+fine27+fine28+fine29+fine30+fine31+fine32+fine33+fine34+fine35+fine36+fine37+fine38+fine39+fine40+fine41+fine42+fine43+fine44+fine45+fine46+fine47+fine48+fine49+fine50) Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
 		';
 
      	declare @temp1 as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
@@ -120,8 +120,8 @@ BEGIN
 		else '0.00' end Advanced,
 		case when (ISNULL(PrevBalance,0)) > 0 then format(ABS((ISNULL(PrevBalance,0))),'0.00')
 		else '0.00' end Dues,
-		format(Debit,'0.00') Debit, format(Credit,'0.00') Credit,
-		format((DebitCreditDiff+ISNULL(PrevBalance,0)),'0.00') Balance,
+		ISNULL(format(Debit,'0.00'),'0.00') Debit, ISNULL(format(Credit,'0.00'),'0.00') Credit,
+		ISNULL(format((DebitCreditDiff+ISNULL(PrevBalance,0)),'0.00'),'0.00') Balance,
 		@memid UserID
 		from #temptable order by MonthID asc;
 
@@ -146,7 +146,7 @@ BEGIN
 		'		
 		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,(fe1+fe2+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50) as Debit,Credit from '+@var+' where (fe1+fe3+fe4+fe5+fe6+fe7+fe8+fe9+fe10+fe11+fe12+fe13+fe14+fe15+fe16+fe17+fe18+fe19+fe20+fe21+fe22+fe23+fe24+fe25+fe26+fe27+fe28+fe29+fe30+fe31+fe32+fe33+fe34+fe35+fe36+fe37+fe38+fe39+fe40+fe41+fe42+fe43+fe44+fe45+fe46+fe47+fe48+fe49+fe50)>0 and remarks=''B'' and stID='+CONVERT(varchar(12), @memid)+'
 		union  
-		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
+		select '+CONVERT(varchar(12), @memid)+' AccID,nepaliDate Date,particulars Particulars,0 as Debit,(credit+dis1+dis2+dis3+dis4+dis5+dis6+dis7+dis8+dis9+dis10+dis11+dis12+dis13+dis14+dis15+dis16+dis17+dis18+dis19+dis20+dis21+dis22+dis23+dis24+dis25+dis26+dis27+dis28+dis29+dis30+dis31+dis32+dis33+dis34+dis35+dis36+dis37+dis38+dis39+dis40+dis41+dis42+dis43+dis44+dis45+dis46+dis47+dis48+dis49+dis50+fine1+fine2+fine3+fine4+fine5+fine6+fine7+fine8+fine9+fine10+fine11+fine12+fine13+fine14+fine15+fine16+fine17+fine18+fine19+fine20+fine21+fine22+fine23+fine24+fine25+fine26+fine27+fine28+fine29+fine30+fine31+fine32+fine33+fine34+fine35+fine36+fine37+fine38+fine39+fine40+fine41+fine42+fine43+fine44+fine45+fine46+fine47+fine48+fine49+fine50) Credit from '+@var+' where credit>0 and remarks=''R'' and stID='+CONVERT(varchar(12), @memid)+'
 			';
 
      	declare @temp3 as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
@@ -156,7 +156,7 @@ BEGIN
 		@temp3	
 		EXEC(@selectQuery1);
 
-		Select (firstName+' '+lastName) FullName,SUM(cast(debit as float)) Debit,SUM(cast(credit as float)) Credit
+		Select (firstName+' '+lastName) FullName,ISNULL(SUM(cast(debit as float)),'0.00') Debit,ISNULL(SUM(cast(credit as float)),'0.00') Credit
 		from @temp3 b,stNamelist where b.AccID=stNamelist.id and  b.AccID=@memid 
 		group by (firstName+' '+lastName); 
 		return;
