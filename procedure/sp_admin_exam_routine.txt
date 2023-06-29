@@ -10,6 +10,7 @@ ALTER proc [dbo].[sp_admin_exam_routine](
 	@userid int = null,
 	@flag nvarchar(10) = null,
 	@classid int = null,
+        @sectionid int = null,
 	@subjectid int = null,
 	@weekid int = null,
 	@termid int = null,
