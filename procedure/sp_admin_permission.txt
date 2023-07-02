@@ -1,0 +1,72 @@
+USE [gokarneshworlightDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_permission]    Script Date: 7/2/2023 10:24:45 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_permission](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(20) = null,	
+	@memid int = null,
+	@permission nvarchar(250) = null,	
+	@permissionid int = null
+)AS
+BEGIN
+
+	If(@flag='I')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+		
+		If not exists(Select 'm' from tbl_apermission where user_id=@memid and permission=@permission and sch_id=@schid) 
+		Begin
+			Insert into tbl_apermission(sch_id,user_id,permission,created_by,created_date)
+			values
+			(@schid,@memid,@permission,@userid,GETDATE());
+		End
+
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='R')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) 
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		If not exists(Select 'm' from tbl_apermission where permission=@permission  and user_id=@memid and sch_id=@schid) 
+		Begin
+			Select 203 StatusCode, 'Permission does not exists' Message
+			return;
+		End
+
+		delete from tbl_apermission where permission=@permission and user_id=@memid and sch_id=@schid;
+		
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	If(@flag='S')
+	Begin
+		If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>-1
+		Begin
+			Select 202 StatusCode, 'User does not exists' Message
+			return;
+		End
+
+		select user_id UserID,permission Permission from tbl_apermission
+		 where sch_id=@schid and
+		 case when @memid='-1' then '1' else user_id end= case when @memid='-1' then '1' else @memid end
+		 ;
+		 return;
+	End
+
+END
