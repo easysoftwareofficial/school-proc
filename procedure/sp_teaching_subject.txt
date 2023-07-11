@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [gajurmukhiDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_teaching_subject]    Script Date: 6/21/2023 2:18:58 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_teaching_subject]    Script Date: 7/11/2023 3:12:54 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -92,7 +92,7 @@ BEGIN
 			Select 203 StatusCode, 'User does not exists' Message
 			return;
 		End
-		delete from tbl_teaching_subject where sch_id=@schid and created_by=@userid and ID=@teachingid 
+		delete from tbl_teaching_subject where sch_id=@schid and ID=@teachingid 
 		Select 200 StatusCode, 'Success' Message
 		return;
 	End

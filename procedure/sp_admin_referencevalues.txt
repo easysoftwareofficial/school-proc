@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [fairylandDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_referencevalues]    Script Date: 6/20/2023 9:55:52 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_referencevalues]    Script Date: 7/11/2023 3:27:36 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -155,20 +155,13 @@ Begin
 		return;
 		end
 
-		
-	
-	
 	   if(@sectionids is not NULL OR @sectionids.exist('*') != 0)
 	   BEGIN
-	   select distinct ts.sch_id SchID,ts.subject_id SubjectID,s.subjectName SubjectName from 
-		tbl_teaching_subject ts,mSheetSubject s
-		where s.classID=ts.class_id  and ts.subject_id=s.id and ts.class_id=@classid and ts.section_id=@sectionid and user_id=@userid;
-
 		select distinct ts.sch_id SchID,ts.subject_id SubjectID,s.subjectName SubjectName from 
 		tbl_teaching_subject ts,mSheetSubject s
 		where  ts.subject_id=s.id and ts.class_id=s.classID
 		and ts.class_id=@classid and user_id=@userid and
-		ts.section_id= ANY (Select 
+		ts.section_id= ALL (Select 
 		Node.Data.value('(SectionID)[1]', 'NVARCHAR(100)')		
 		FROM @sectionids.nodes('/root/SectionIDs') Node(Data));
 		return;
