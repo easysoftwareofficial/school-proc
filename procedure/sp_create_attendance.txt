@@ -18,6 +18,12 @@ ALTER proc [dbo].[sp_create_attendance](
 	@flag nvarchar(2) = null
 )AS
 BEGIN		
+                 
+                if not exists(select 'm' from tbl_atten_route where ssid=@ssid and is_active='A' and is_del='N')
+		begin
+		     Select 201 StatusCode, 'Network not supported.' Message
+		return;
+		end
 		
 		If exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and check_in_place is not null and attend_date=@attendate and @attenstatus='I' )
 		Begin
