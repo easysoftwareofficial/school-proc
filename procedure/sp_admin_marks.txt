@@ -1,11 +1,10 @@
-USE [gokarneshworlightDB]
+USE [threestaracademyDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_marks]    Script Date: 6/20/2023 9:18:20 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_marks]    Script Date: 7/24/2023 9:01:51 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 ALTER proc [dbo].[sp_admin_marks](
 	@schid nvarchar(50) = null,
 	@userid int = null,
@@ -79,6 +78,7 @@ BEGIN
 	If(@flag='S')
 	Begin
 
+
 	  declare @tempuser TABLE(ID int identity(1,1),stid int);
 		declare @sub nvarchar(50)='sub'+(select top 1 CAST(sno as nvarchar(50)) from msheetsubject where classid=@classid and id=@subjectid and academicYear=((select top 1 academicYear from stAcademicYear where defaultYear='Yes')));
 	   declare @squery nvarchar(250)='
@@ -87,19 +87,17 @@ BEGIN
 		insert into @tempuser
 		exec(@squery);
 		
-	--select * from tbl_marks_input where sch_id='NJ2086'
-	--select * from tbl_extra_marks;
 	  if exists(select 'M' from EasySchoolNew.dbo.tbl_marks_input where sch_id=@schid and class_id=@classid and section_id=@sectionid and term_id=@termid and subject_id=@subjectid)
 	  BEGIN
 		
 		Select CAST(u.rNo as nvarchar(50)) RollNo, (u.firstName+' '+u.lastName) FullName,u.id MemID, isnull(a.th_obtain,'0.0') ThObtain,
 		CAST(ISNULL((select distinct ISNULL(fmTH,'0.0') from msheetTermWiseSubject where classID=@classid and termID=@termid and subID=@subjectid),'0.0') as NVARCHAR(20)) ToThObtain,
 		CAST(ISNULL((select distinct ISNULL(fmPR,'0.0') from msheetTermWiseSubject where classID=@classid and termID=@termid and subID=@subjectid),'0.0') as NVARCHAR(20)) ToPrObtain,
-		isnull(a.pr_obtain,'0.0') PrObtain,(select distinct subjectName from mSheetSubject where classID=@classid and id=@subjectid) Subject
+		isnull(a.pr_obtain,'0.0') PrObtain,(select top 1 subjectName from mSheetSubject where classID=@classid and id=@subjectid) Subject
 		from  @tempuser tu
-		left join stNamelist u on u.id=tu.stid
-		left join EasySchoolNew.dbo.tbl_marks_input a on tu.stid=a.user_id and a.is_del='N' and a.term_id=@termid and a.subject_id = @subjectid 
-		where u.classID=@classid and u.sectionID=@sectionid
+		inner join stNamelist u on u.id=tu.stid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+		left join EasySchoolNew.dbo.tbl_marks_input a on tu.stid=a.user_id and a.is_del='N' and a.term_id=@termid and a.subject_id = @subjectid and a.class_id=@classid and a.section_id=@sectionid
+		where u.classID=@classid and u.sectionID=@sectionid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and a.sch_id=@schid
 		--left join tbl_subject s on s.subject_id=a.subject_id and s.sch_id=a.sch_id and s.subject_id = @subjectid
 		order by CAST(u.rNo as BIGINT);;
 		END
