@@ -1,6 +1,6 @@
 USE [threestaracademyDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_extra_act_input]    Script Date: 7/24/2023 9:26:25 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_extra_act_input]    Script Date: 7/25/2023 12:02:09 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -29,8 +29,8 @@ BEGIN
 		End
 		Select u.id StudentID, CAST(u.rNo as nvarchar(50)) RollNo, (u.firstName+' '+u.lastName) FullName,(select extraActivities from msheetExtraActivities u where u.id=@extraactid and extraActivities!='' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')) Subject, isnull(m.value,'') ExtraActMarks 
 		from stNamelist u
-		left join EasySchoolNew.dbo.tbl_extra_act_marks m on m.user_id=u.id and m.is_del='N' and term_id=@termid and extr_act_id=@extraactid			
-		where m.sch_id=@schid and u.classID=@classid and u.sectionID = any(Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) and u.appType='Student'
+		left join EasySchoolNew.dbo.tbl_extra_act_marks m on m.sch_id=@schid and m.user_id=u.id and m.is_del='N' and term_id=@termid and extr_act_id=@extraactid			
+		where u.classID=@classid and u.sectionID = any(Select section_id=Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('ArrayOfSectionIDLst/SectionIDLst') Node(data)) and u.appType='Student'
 		order by CAST(u.rNo as BIGINT);
 		
 		return;

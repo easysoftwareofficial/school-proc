@@ -1,6 +1,6 @@
 USE [threestaracademyDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_marks]    Script Date: 7/24/2023 9:01:51 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_marks]    Script Date: 7/25/2023 11:52:13 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -32,7 +32,7 @@ BEGIN
 		declare @i int,@count int
 		set @i=1
 		set @count = 
-		(SELECT count(1) FROM @param.nodes('ArrayOfParamLst/ParamLst') Node(Data));
+		(SELECT count(*) FROM @param.nodes('ArrayOfParamLst/ParamLst') Node(Data));
 
 		Insert into @temp_tbl(mem_id,th_obtain,pr_obtain)
 		(Select mem_id=Node.Data.value('(MemID)[1]','INT'),
@@ -95,10 +95,9 @@ BEGIN
 		CAST(ISNULL((select distinct ISNULL(fmPR,'0.0') from msheetTermWiseSubject where classID=@classid and termID=@termid and subID=@subjectid),'0.0') as NVARCHAR(20)) ToPrObtain,
 		isnull(a.pr_obtain,'0.0') PrObtain,(select top 1 subjectName from mSheetSubject where classID=@classid and id=@subjectid) Subject
 		from  @tempuser tu
-		inner join stNamelist u on u.id=tu.stid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
-		left join EasySchoolNew.dbo.tbl_marks_input a on tu.stid=a.user_id and a.is_del='N' and a.term_id=@termid and a.subject_id = @subjectid and a.class_id=@classid and a.section_id=@sectionid
-		where u.classID=@classid and u.sectionID=@sectionid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and a.sch_id=@schid
-		--left join tbl_subject s on s.subject_id=a.subject_id and s.sch_id=a.sch_id and s.subject_id = @subjectid
+		left join stNamelist u on u.id=tu.stid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
+		left join EasySchoolNew.dbo.tbl_marks_input a on a.sch_id=@schid and tu.stid=a.user_id and a.is_del='N' and a.term_id=@termid and a.subject_id = @subjectid and a.class_id=@classid and a.section_id=@sectionid
+		where u.classID=@classid and u.sectionID=@sectionid and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')		
 		order by CAST(u.rNo as BIGINT);;
 		END
 		ELSE
