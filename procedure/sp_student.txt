@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [gajurmukhiDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_student]    Script Date: 6/21/2023 2:10:45 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_student]    Script Date: 7/27/2023 1:35:18 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -34,8 +34,7 @@ BEGIN
 			Select 203 StatusCode, 'Section does not exists' Message
 			return;
 		End	
-
-		select  u.id StudentID,classid ClassID,case when (appType='') then 'S' else left(appType,1) end as UserType,'' SchID,appUser StdUserName,
+		select  u.id StudentID,classid ClassID,case when (appType='') then 'S' else left(appType,1) end as UserType,'' SchID,appUser StdUserName,ISNULL(u.lastLogginedDate,'Not Logged In') LastLoginedDate,
 		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as StdFullName,CAST(rNo as nvarchar(50)) RollNo,u.sectionID SectionID,
     	ltrim(rtrim(leftChr))+ltrim(rtrim(dash1))+ltrim(rtrim(leftZero))+ltrim(rtrim(dash2+convert(varchar(20),regNo)))+ltrim(rtrim(dash3))+ltrim(rtrim(rightZero))+ltrim(rtrim(dash4))+ltrim(rtrim(rightChr)) RegNum,
 		@imgurl+'photo/user/'+u.image Image,u.fatherName FatherName,DOB DateOfBirth,gender Gender,
