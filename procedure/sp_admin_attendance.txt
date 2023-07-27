@@ -1,6 +1,6 @@
-USE [basundharaacademyDB]
+USE [publicDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_attendance]    Script Date: 6/20/2023 4:16:35 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_attendance]    Script Date: 7/27/2023 1:39:11 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -34,7 +34,7 @@ BEGIN
 		If exists(Select 'm' from tbl_attendance where sch_id=@schid and case when @dflag='E' then english_date else nepali_date end = case when @dflag='E' then @englishdate else @nepdate end 
 		and class_id=@classid and is_del='N' 
 		and case when @issubjective='Y' then subject_id else subject_id end = case when @issubjective='Y' then @subjectid else '0' end
-		and section_id = any (Select section_id = Node.Data.value('(SectionID)[1]','NCHAR(1)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) )
+		and section_id = any (Select section_id = Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) )
 		Begin
 			Select 202 StatusCode, 'Attendance already exists for a day' Message
 			return;
@@ -65,14 +65,14 @@ BEGIN
 	Begin
 		If not exists(Select 'm' from tbl_attendance where sch_id=@schid and case when @dflag='E' then english_date else nepali_date end = case when @dflag='E' then @englishdate else @nepdate end 
 		and class_id=@classid and is_del='N' 
-		and section_id = any (Select section_id = Node.Data.value('(SectionID)[1]','NCHAR(1)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) )
+		and section_id = any (Select section_id = Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) )
 		Begin
 			Select 202 StatusCode, 'Attendance does not exists for a day' Message
 			return;
 		End
 		Update tbl_attendance set is_del='Y', updated_by=@userid, updated_date=GETDATE()
 		where sch_id=@schid and class_id=@classid and 
-		section_id=any (Select section_id = Node.Data.value('(SectionID)[1]','NCHAR(1)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) and 
+		section_id=any (Select section_id = Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) and 
 		case when @issubjective = 'N' then '1' else subject_id end = case when @issubjective='N' then '1' else @subjectid end
 		and case when @dflag='E' then english_date else nepali_date end = case when @dflag='E' then @englishdate else @nepdate end
 		Select 200 StatusCode, 'Success' Message
@@ -90,7 +90,7 @@ BEGIN
 			where 
 			--case when @userid='-1' then '1' else a.created_by end = case when @userid='-1' then '1' else @userid end and
 		     u.classID=@classid 
-			and u.sectionID=any (Select section_id = Node.Data.value('(SectionID)[1]','NCHAR(1)') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) and 
+			and u.sectionID=any (Select section_id = Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data)) and 
 			case when @issubjective = 'N' then subject_id else subject_id end = case when @issubjective='N' then '0' else @subjectid end
 			and case when @dflag='E' then english_date else nepali_date end = case when @dflag='E' then @englishdate else @nepdate end order by CAST(rNo as int);
 			return;
