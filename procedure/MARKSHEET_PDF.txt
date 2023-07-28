@@ -1,0 +1,11 @@
+USE [shreedahusecondaryDB]
+GO
+
+/****** Object:  UserDefinedTableType [dbo].[MARKSHEET_PDF]    Script Date: 7/28/2023 8:47:27 PM ******/
+CREATE TYPE [dbo].[MARKSHEET_PDF] AS TABLE(
+	[UserID] [varchar](100) NULL,
+	[RegistrationNum] [varchar](500) NULL
+)
+GO
+
+
