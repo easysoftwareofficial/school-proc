@@ -1,6 +1,6 @@
 USE [gokarneshworlightDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_device_user]    Script Date: 6/20/2023 4:55:39 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_device_user]    Script Date: 8/24/2023 11:24:32 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -51,13 +51,11 @@ BEGIN
 	If(@flag='S')
 	Begin
 	   
-	   select firstName+' '+lastName FullName,appUser UserName,CAST(ISNULL(device_code,0) as nvarchar(1000)) DeviceCode from stNamelist where (appType='Admin' or appType='Teacher')
+	   select firstName+' '+lastName FullName,appUser UserName,CAST(ISNULL(device_code,0) as nvarchar(1000)) DeviceCode from stNamelist 
+	   where (appType='Admin' or appType='Teacher') and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
 	  
 		
 		return;
 	End
 
 END
-
-
-
