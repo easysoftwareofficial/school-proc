@@ -27,7 +27,7 @@ BEGIN
 
 	if(@userid='-1')
 	BEGIN
-		Select @value Atten,id ID into #workdate from stNamelist where appType!='Student'	
+		Select @value Atten,id ID into #workdate from stNamelist where appType!='Student' and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')
 		
 		If(@dflag='N')
 		Begin
