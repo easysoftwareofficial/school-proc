@@ -1,4 +1,4 @@
-USE [gokarneshworlightDB]
+USE [mountgloryDB]
 GO
 /****** Object:  StoredProcedure [dbo].[sp_admin_assignment]    Script Date: 6/20/2023 4:09:43 PM ******/
 SET ANSI_NULLS ON
@@ -144,7 +144,7 @@ BEGIN
 		where s.sch_id=@schid and assign_id=@assignmentid and 
 		case when @memstatus='-1' then '1' else assign_status end = case when @memstatus='-1' then '1' else @memstatus end order by u.ID desc;
 
-		Select @assignmentid AssignmentID,u.user_id MemID, u.full_name FullName,isnull(t.Point,'0') Point,
+		Select @assignmentid AssignmentID,u.id MemID, u.firstName+' '+u.lastName FullName,isnull(t.Point,'0') Point,
 		isnull(FORMAT(CAST(t.SubmittedDate AS DATE),'yyyy-MM-dd'),'Pending') SubDate,	
 		isnull(t.SubmittedDate,'Pending') SubmittedDate,	
 		isnull(t.MemStatus,'P') MemStatusID,	
