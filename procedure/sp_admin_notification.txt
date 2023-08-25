@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [CupidDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_notification]    Script Date: 6/20/2023 9:52:19 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_notification]    Script Date: 8/25/2023 1:44:12 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -175,7 +175,7 @@ BEGIN
 		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
 		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
 		from tbl_notification n,stNamelist u
-		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id is null and n.user_id is null and n.user_type='Student' and n.created_by=u.id and 
+		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id is null and n.user_id is null and n.user_type='S' and n.created_by=u.id and 
 		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
 		return;
 	 end;
@@ -187,7 +187,7 @@ BEGIN
 		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
 		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
 		from tbl_notification n,stNamelist u
-		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id=@section and n.user_id is null and n.user_type='Student' and n.created_by=u.id and 
+		where n.sch_id=@schid and is_del='N' and n.class_id=@classid and n.section_id=@section and n.user_id is null and n.user_type='S' and n.created_by=u.id and 
 		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
 		return;
 	 end;
@@ -199,7 +199,7 @@ BEGIN
 		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
 		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
 		from tbl_notification n,stNamelist u
-		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Student' and n.created_by=u.id and 
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='S' and n.created_by=u.id and 
 		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
 		return;
 	 end;
@@ -211,7 +211,7 @@ BEGIN
 		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
 		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
 		from tbl_notification n,stNamelist u
-		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Admin' and n.created_by=u.id and 
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='A' and n.created_by=u.id and 
 		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
 		return;
 	 end;
@@ -222,7 +222,7 @@ BEGIN
 		@imgurl+'photo/notification/'+attachment Attachment, attach_type AttachType,
 		FORMAT(CAST(not_date as date),'yyyy-MM-dd') NotificationDate,(firstName+''+lastName) FullName,@imgurl+'photo/user/'+image UserImage
 		from tbl_notification n,stNamelist u
-		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='Teacher' and n.created_by=u.id and 
+		where n.sch_id=@schid and is_del='N' and n.user_id=@MEM and n.user_type='T' and n.created_by=u.id and 
 		case when @userid='-1' then'1' else n.created_by end=case when @userid='-1' then '1' else @userid end  ;
 		return;
 	 end;
