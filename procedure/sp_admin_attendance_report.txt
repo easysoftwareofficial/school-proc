@@ -1,6 +1,6 @@
 USE [gokarneshworlightDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_attendance_report]    Script Date: 6/20/2023 4:46:31 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_attendance_report]    Script Date: 8/29/2023 3:53:46 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -99,7 +99,8 @@ BEGIN
 			'0' LeaveID
 			from #workingday w
 			left join tbl_teacher_attendance a on w.atten_nep_date=a.atten_nep_date and a.is_del='N' and a.sch_id=@schid
-			left join stNamelist u on u.id=a.user_id;		
+			left join stNamelist u on u.id=a.user_id
+			where u.firstName is not null
 		End
 		drop table #workingday
 
