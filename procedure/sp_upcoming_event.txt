@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [EasySchoolNew]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_upcoming_event]    Script Date: 6/21/2023 2:20:07 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_upcoming_event]    Script Date: 8/29/2023 1:37:58 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -11,21 +11,59 @@ ALTER proc [dbo].[sp_upcoming_event](
 	@imgurl nvarchar(250) = null
 )AS
 BEGIN
-	
-	Select top(case when @count='-1' then '1000' else @count end) * from
-	(Select
+	If not exists(Select 'm' from tbl_school with (nolock) where sch_id=@schid and del_flag='N')
+	Begin
+		Select 201 StatusCode, 'School does not exists' Message
+		return;
+	End
+
+	declare @eve1 as table (ID int identity(1,1) primary key, EventID int,  Title nvarchar(250), Description nvarchar(250),  IsHoliday nvarchar(250),  NepaliDate nvarchar(250),  EnglishDate nvarchar(250),  EventType nvarchar(250),  Banner nvarchar(250),  DaysRemaining nvarchar(250),  Venue nvarchar(250))
+	declare @eve2 as table (ID int identity(1,1) primary key, EventID int,  Title nvarchar(250), Description nvarchar(250),  IsHoliday nvarchar(250),  NepaliDate nvarchar(250),  EnglishDate nvarchar(250),  EventType nvarchar(250),  Banner nvarchar(250),  DaysRemaining nvarchar(250),  Venue nvarchar(250))
+
+	insert into @eve1
+	Select 
 	ID EventID, title Title, description Description, is_holiday IsHoliday, nepali_date NepaliDate,
 	english_date EnglishDate, 'C' EventType ,'' Banner,(DATEDIFF(DAY,GETDATE(),english_date)) DaysRemaining,
 	'-' Venue
 	from tbl_cal_event
-	where del_flag='N' and sch_id=@schid and english_date>=format(GETDATE(),'yyyy-MM-dd')
-	Union
-	Select ID EventID, title Title, description Description, 'N' IsHoliday, nepali_date_from NepaliDate,
-	english_date_from EnglishDate, 'E' EventType, (@imgurl+'photo/event/'+banner) Banner,
-	(DATEDIFF(DAY,GETDATE(),english_date_from)) DaysRemaining,venue Venue
-	from tbl_event
-	where del_flag='N' and sch_id=@schid and english_date_from>=format(GETDATE(),'yyyy-MM-dd')) a
-	order by a.EnglishDate asc
+	where del_flag='N' and sch_id=@schid and english_date>=format(GETDATE(),'yyyy-MM-dd') order by english_date asc;
+	
+
+	insert into @eve2
+	Select
+	ID EventID, title Title, description Description, is_holiday IsHoliday, nepali_date NepaliDate,
+	english_date EnglishDate, 'C' EventType ,'' Banner,(DATEDIFF(DAY,GETDATE(),english_date)) DaysRemaining,
+	'-' Venue
+	from tbl_cal_event
+	where del_flag='N' and sch_id=@schid and english_date<=format(GETDATE(),'yyyy-MM-dd') order by english_date asc
+
+	Select ID, EventID,Title,Description,IsHoliday,NepaliDate,EnglishDate,EventType,Banner,DaysRemaining,Venue from @eve1
+	UNION
+	Select ID, EventID,Title,Description,IsHoliday,NepaliDate,EnglishDate,EventType,Banner,DaysRemaining,Venue from @eve2 order by ID asc;
+	
+	
+
+	--Select
+	--ID EventID, title Title, description Description, is_holiday IsHoliday, nepali_date NepaliDate,
+	--english_date EnglishDate, 'C' EventType ,'' Banner,(DATEDIFF(DAY,GETDATE(),english_date)) DaysRemaining,
+	--'-' Venue
+	--from tbl_cal_event
+	--where del_flag='N' and sch_id=@schid
+
+	--Select top(case when @count='-1' then '1000' else @count end) * from
+	--(Select
+	--ID EventID, title Title, description Description, is_holiday IsHoliday, nepali_date NepaliDate,
+	--english_date EnglishDate, 'C' EventType ,'' Banner,(DATEDIFF(DAY,GETDATE(),english_date)) DaysRemaining,
+	--'-' Venue
+	--from tbl_cal_event
+	--where del_flag='N' and sch_id=@schid and english_date>=format(GETDATE(),'yyyy-MM-dd')
+	--Union
+	--Select ID EventID, title Title, description Description, 'N' IsHoliday, nepali_date_from NepaliDate,
+	--english_date_from EnglishDate, 'E' EventType, (@imgurl+'photo/event/'+banner) Banner,
+	--(DATEDIFF(DAY,GETDATE(),english_date_from)) DaysRemaining,venue Venue
+	--from tbl_event
+	--where del_flag='N' and sch_id=@schid and english_date_from>=format(GETDATE(),'yyyy-MM-dd')) a
+	--order by a.EnglishDate asc
 	
 	return;
 END
