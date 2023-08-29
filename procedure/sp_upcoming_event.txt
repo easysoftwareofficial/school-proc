@@ -11,12 +11,7 @@ ALTER proc [dbo].[sp_upcoming_event](
 	@imgurl nvarchar(250) = null
 )AS
 BEGIN
-	If not exists(Select 'm' from tbl_school with (nolock) where sch_id=@schid and del_flag='N')
-	Begin
-		Select 201 StatusCode, 'School does not exists' Message
-		return;
-	End
-
+	
 	declare @eve1 as table (ID int identity(1,1) primary key, EventID int,  Title nvarchar(250), Description nvarchar(250),  IsHoliday nvarchar(250),  NepaliDate nvarchar(250),  EnglishDate nvarchar(250),  EventType nvarchar(250),  Banner nvarchar(250),  DaysRemaining nvarchar(250),  Venue nvarchar(250))
 	declare @eve2 as table (ID int identity(1,1) primary key, EventID int,  Title nvarchar(250), Description nvarchar(250),  IsHoliday nvarchar(250),  NepaliDate nvarchar(250),  EnglishDate nvarchar(250),  EventType nvarchar(250),  Banner nvarchar(250),  DaysRemaining nvarchar(250),  Venue nvarchar(250))
 
