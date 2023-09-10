@@ -1,0 +1,59 @@
+USE [gandakischoolDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_repsum]    Script Date: 9/10/2023 3:09:32 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_atten_repsum]
+(
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nchar(2) = null,
+	@dflag nchar(2) = null,
+	@classid int = null,
+	@sectionid int = null,
+	@memid int = null,
+	@issubjective nchar(2) = null,
+	@subjectid int = null,
+	@dtflag nchar(2) = null,
+	@values nvarchar(50) = null,
+	@datefrom nvarchar(20) = null,
+	@dateto nvarchar(20) = null,
+	@imgurl nvarchar(250) = null
+)
+AS
+BEGIN
+	If(@flag='S')
+	Begin
+	
+	if(@dflag='R')
+	BEGIN
+
+	if(@dtflag='F')
+	BEGIN
+	select u.id UserID,(u.firstName+' '+u.lastName) FullName,attend_status AttendStatus,nepali_date NepaliDate from tbl_attendance a
+	left join stNamelist u on u.id=a.user_id 
+	where 
+	a.class_id=@classid and a.section_id=@sectionid and nepali_date>=@datefrom and a.sch_id=@schid
+	and nepali_date<=@dateto and subject_id='0' and a.is_del='N' and u.id is not null;
+	return
+	END
+
+	if(@dtflag='M')
+	BEGIN
+
+	
+	select u.id UserID,(u.firstName+' '+u.lastName) FullName,attend_status AttendStatus,nepali_date NepaliDate from tbl_attendance a
+	left join stnamelist u on u.id=a.user_id 
+	where 
+	a.class_id=@classid and a.section_id=@sectionid and a.sch_id=@schid and SUBSTRING(nepali_date,1,7)=@values and subject_id='0' and a.is_del='N' and u.id is not null;
+	return;
+
+	END
+	
+	return;
+	End
+	END
+END
+
