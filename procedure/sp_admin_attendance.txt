@@ -1,10 +1,11 @@
-USE [gandakischoolDB]
+USE [vidhyavikashDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_attendance]    Script Date: 9/10/2023 2:57:51 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_attendance]    Script Date: 9/11/2023 12:06:18 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 ALTER proc [dbo].[sp_admin_attendance](
 	@schid nvarchar(50) = null,
 	@userid int= null,
@@ -117,7 +118,7 @@ BEGIN
 		Begin
 		
 		   declare @secid nvarchar(50)=(Select section_id = Node.Data.value('(SectionID)[1]','INT') from @sectionid.nodes('/ArrayOfSectionLst/SectionLst') Node(Data));
-			select at.ID AttendID,at.user_id UserID,(u.firstName+' '+u.lastName) FullName,c.clName Class,s.secName Section,attend_status AttenStatus,fatherPhone Phone,
+			select at.ID AttendID,at.user_id UserID,(u.firstName+' '+u.lastName) FullName,c.clName Class,s.secName Section,attend_status AttenStatus,fatherMobile Phone,
 			ISNULL(is_followed,'N') IsFollowed,follow_remarks FollowRemarks,followed_date FollowDate,followed_by FollowBy
 			from tbl_attendance at
 			left join stnamelist u on u.classID=at.class_id and u.sectionID=at.section_id and u.id=at.user_id
