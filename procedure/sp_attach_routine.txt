@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER proc [dbo].[sp_attach_routine](
+CREATE proc [dbo].[sp_attach_routine](
 	@schid nvarchar(50) = null,
 	@flag nchar(2) = null,
 	@userid int = null,
@@ -37,7 +37,7 @@ BEGIN
 
 	 if(@routtype='E')
 	 BEGIN
-	select rt.ID RoutineID,clName Class,examTerminal Term,@imgurl+'document/'+attach Attachment from tbl_attach_routine 
+	select rt.ID RoutineID,clName Class,examTerminal Term,@imgurl+'document/'+attach Attachment from tbl_attach_routine rt
 	left join stClass c on c.id=rt.class_id
 	left join msheetTerminal t on t.id=rt.term_id
 	where class_id=@classid and term_id=@termid and rout_type='E' and sch_id=@schid and is_del='N'
