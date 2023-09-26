@@ -1,11 +1,11 @@
-USE [gokarneshworlightDB]
+USE [EasySchoolNew]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_attach_routine]    Script Date: 6/21/2023 9:59:40 AM ******/
+/****** Object:  StoredProcedure [dbo].[sp_attach_routine]    Script Date: 9/26/2023 12:30:46 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE proc [dbo].[sp_attach_routine](
+ALTER proc [dbo].[sp_attach_routine](
 	@schid nvarchar(50) = null,
 	@flag nchar(2) = null,
 	@userid int = null,
@@ -19,30 +19,36 @@ CREATE proc [dbo].[sp_attach_routine](
 )
 AS
 BEGIN
-
 	
 	If(@flag='S')
 	Begin
 
 	 if(@routtype='C')
 	 BEGIN
-	select rt.ID RoutineID,clName Class,secName Section,@imgurl+'document/'+attach Attachment 
-	from tbl_attach_routine rt
-	left join stClass c on c.id=rt.class_id
-	left join stSection s on s.id=rt.section_id
+	select ID RoutineID,'One' Class,'A' Section,@imgurl+'document/'+attach Attachment from tbl_attach_routine 
 	where 
-	 class_id=@classid and section_id=@sectionid and rout_type='C' and sch_id=@schid and is_del='N'
+	
+	class_id=@classid and section_id=@sectionid and rout_type='C' and sch_id=@schid and is_del='N'
 	return;
 	END;
 
 	 if(@routtype='E')
 	 BEGIN
-	select rt.ID RoutineID,clName Class,examTerminal Term,@imgurl+'document/'+attach Attachment from tbl_attach_routine rt
-	left join stClass c on c.id=rt.class_id
-	left join msheetTerminal t on t.id=rt.term_id
-	where class_id=@classid and term_id=@termid and rout_type='E' and sch_id=@schid and is_del='N'
+	select ID RoutineID,'One' Class,'First Terminal Exam' Term,@imgurl+'document/'+attach Attachment from tbl_attach_routine where class_id=@classid and term_id=@termid and rout_type='E' and sch_id=@schid and is_del='N'
 	return;
 	END;
+
+	if(@routtype='B')
+	BEGIN	
+	select exam_name Title,'Exam' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine r
+	left join tbl_term t on  t.term_id=r.term_id and t.sch_id=r.sch_id
+	where r.class_id=@classid  and r.rout_type='E' and r.sch_id=@schid and r.is_del='N'
+	UNION
+	select 'Class Routine' Title,'Class' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine where 
+	class_id=@classid and section_id=@sectionid and rout_type='C' and sch_id=@schid and is_del='N'
+	return;
+	END;
+
 
 	END
 

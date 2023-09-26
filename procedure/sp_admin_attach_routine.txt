@@ -1,11 +1,10 @@
-USE [gokarneshworlightDB]
+USE [EasySchoolNew]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_attach_routine]    Script Date: 6/20/2023 4:12:11 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_attach_routine]    Script Date: 9/26/2023 12:34:10 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 ALTER proc [dbo].[sp_admin_attach_routine](
 	@schid nvarchar(50) = null,
 	@flag nchar(2) = null,
@@ -23,9 +22,9 @@ BEGIN
 	If(@flag='i')
 	Begin
 		
-		If not exists(Select 'm' from stNamelist where id=@userid)
+		If not exists(Select 'm' from tbl_user where sch_id=@schid and user_id=@userid and del_flag='N')
 		Begin
-			Select 203 StatusCode, 'User does not exists' Message
+			Select 203 StatusCode, 'Student does not exists' Message
 			return;
 		End
 
@@ -52,12 +51,7 @@ BEGIN
 
 	 if(@routtype='C')
 	 BEGIN
-	select RT.ID RoutineID,
-	clName Class,secName Section,@imgurl+'document/'+attach Attachment 
-	from tbl_attach_routine rt
-	left join stClass c on c.id=rt.class_id
-	left join stSection s on s.id=rt.section_id
-	where rout_type='C' and sch_id=@schid and is_del='N'
+	select ID RoutineID,'One' Class,'A' Section,@imgurl+'document/'+attach Attachment from tbl_attach_routine where rout_type='C' and sch_id=@schid and is_del='N'
 	return;
 	END;
 
@@ -67,13 +61,25 @@ BEGIN
 	return;
 	END;
 
+	if(@routtype='B')
+	BEGIN	
+	select exam_name Title,'Exam' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine r
+	left join tbl_term t on  t.term_id=r.term_id and t.sch_id=r.sch_id
+	where r.class_id=@classid  and r.rout_type='E' and r.sch_id=@schid and r.is_del='N'
+	UNION
+	select 'Class Routine' Title,'Class' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine where 
+	class_id=@classid and section_id=@sectionid and rout_type='C' and sch_id=@schid and is_del='N'
+	return;
+	END;
+
+
 	END
 	If(@flag='R')
 	Begin
 		
-		If not exists(Select 'm' from stNamelist where id=@userid)
+		If not exists(Select 'm' from tbl_user where sch_id=@schid and user_id=@userid and del_flag='N')
 		Begin
-			Select 203 StatusCode, 'User does not exists' Message
+			Select 203 StatusCode, 'Student does not exists' Message
 			return;
 		End
 
