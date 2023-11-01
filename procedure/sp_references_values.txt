@@ -1,10 +1,4 @@
-USE [gokarneshworlightDB]
-GO
-/****** Object:  StoredProcedure [dbo].[sp_reference_values]    Script Date: 6/21/2023 1:55:28 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER proc [dbo].[sp_reference_values](
 	@schid nvarchar(50) = null,
 	@class_id nvarchar(50) = null,
@@ -29,7 +23,7 @@ BEGIN
 
 	If(@dflag='ACADEMIC')
 	Begin
-		Select academicYear AcademicYear, startDate "From", endDate "To", activateinactivate IsActive
+		Select academic_year AcademicYear, year_from "From", year_to "To", is_active IsActive
 		from tbl_academic_year
 		return;
 	End
