@@ -24,7 +24,7 @@ ALTER proc [dbo].[sp_admin_attendance](
 )AS
 BEGIN
 
-	If not exists(Select 'm' from stNamelist where id=@userid and del_flag='N') and @userid<>'-1'
+	If not exists(Select 'm' from stNamelist where id=@userid) and @userid<>'-1'
 	Begin
 		Select 202 StatusCode, 'UserID does not exists' Message
 		return;
