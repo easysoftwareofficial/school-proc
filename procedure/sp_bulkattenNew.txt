@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER proc [dbo].[sp_bulkattenNew] (
+CREATE proc [dbo].[sp_bulkattenNew] (
 @schid nvarchar(250)=null,
 @deviceid int=null,
 @attendate date=null,
@@ -25,11 +25,10 @@ BEGIN
 	If(@flag='S')
 	Begin
 
-	 set @userid =ISNULL((Select id from stNamelist where device_code=@deviceid and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')),'0');
+	 set @userid =ISNULL((Select top 1 id from stNamelist where device_code=@deviceid and appType!='Student' and academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes')),'0');
 
 	 if(@userid!='0')
 	 BEGIN
-
 		If exists(Select 'm' from tbl_teacher_attendance where sch_id=@schid and user_id=@userid and checkin_time is not null and attend_date=@attendate )
 		Begin
 			Update tbl_teacher_attendance set checkout_time=@attentime,check_out_place='O',check_out_via='D',updated_by=@userid,updated_date=GETDATE(), "hour"=convert(float(2),DATEDIFF(MINUTE,checkin_time,@attentime))/60
