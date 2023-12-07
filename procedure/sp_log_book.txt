@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER proc [dbo].[sp_log_book](
+CREATE proc [dbo].[sp_log_book](
 	@schid nvarchar(50) = null,
 	@userid int = null,
 	@flag nchar(2) = null,
@@ -22,9 +22,9 @@ Begin
  IF(@flag='S')
  BEGIN
  
-  select  subject_name Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,updated_date LastUpdatedDate
+  select  subjectName Subject,lesson_no LessonNo,page_no PageNo,lesson Lesson,assignment_given AssignmentGiven,log_date CreatedDate,updated_date LastUpdatedDate
    from tbl_log_book l
-  left join mSheetSubject s on s.classID=l.class_id and s.id=l.subject_id and s.sch_id=l.sch_id
+  left join mSheetSubject s on s.classID=l.class_id and s.id=l.subject_id 
   where l.sch_id=@schid and l.class_id=@classid and l.section_id=@sectionid and l.log_date=@date
   
  return;

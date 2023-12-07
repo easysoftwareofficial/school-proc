@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER proc [dbo].[sp_discussion](
+CREATE proc [dbo].[sp_discussion](
 	@schid nvarchar(50) = null,
 	@flag nvarchar(5) = null,
 	@classid int = null,
@@ -39,7 +39,7 @@ BEGIN
 	select 
 	d.ID DiscussionID,
 	d.user_id UserID,
-	(select top 1 full_Name from stNamelist us where us.id=d.user_id) FullName,
+	(select top 1 firstName+' '+lastName from stNamelist us where us.id=d.user_id) FullName,
 	ISNULL((select count(*) from tbl_discussion_comment c where c.discussion_id=d.id  and c.sch_id=@schid and c.is_del='N' and d.is_del='N'),0) NoOfComment,
 	@imgurl+'photo/user/'+(select top 1 image from stNamelist us where us.id=d.user_id) UserImage,	
 	title Title,description Description,(select top 1 (firstName+' '+lastName) from stNamelist us where us.id=d.mem_id) AssignedTo,
