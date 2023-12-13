@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [vajraDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_account]    Script Date: 6/20/2023 3:49:24 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_account]    Script Date: 12/13/2023 1:20:42 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -134,7 +134,7 @@ Begin
 		select stID AccID,nepaliDate Date,particulars Particulars,0 as Debit,Credit from '+@var2+' where credit>0 and remarks=''R''		
 		';
 
-     	declare @temppp as table (AccID nvarchar(50),Date nvarchar(50),Particulars nvarchar(50),Debit nvarchar(50),Credit nvarchar(50))
+     	declare @temppp as table (AccID nvarchar(250),Date nvarchar(250),Particulars nvarchar(250),Debit nvarchar(250),Credit nvarchar(250))
 
 		INSERT		
 		INTO
