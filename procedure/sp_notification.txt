@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [cosmicinternationalDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_notification]    Script Date: 6/21/2023 1:48:31 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_notification]    Script Date: 12/15/2023 12:58:14 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -73,7 +73,7 @@ BEGIN
 			(Select classID from stNamelist where id=@memid) ClassID
 			from tbl_notification n
 			left join stNamelist u on n.created_by=u.id
-			where n.user_type=@usertype and is_del='N'
+			where n.user_type=@usertype and is_del='N' and n.user_id is null
 			
 			return;
 		End
