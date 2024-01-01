@@ -1,11 +1,10 @@
-USE [gokarneshworlightDB]
+USE [cosmicinternationalDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_atten_route]    Script Date: 6/20/2023 4:15:16 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_route]    Script Date: 1/1/2024 2:25:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 ALTER proc [dbo].[sp_admin_atten_route](
 	@schid nvarchar(50) = null,
 	@userid int = null,
@@ -102,11 +101,12 @@ BEGIN
 			Select 202 StatusCode, 'User does not exists' Message
 			return;
 		End
+		
 		Select ID RouteID, name Name, ssid SSID, is_active IsActive
 		from tbl_atten_route a
-		where sch_id=@schid and is_del='N' and 
-		case when @userid='-1' then '1' else user_id end = case when @userid='-1' then '1' else @userid end
+		where sch_id=@schid and is_del='N' 		
 		and case when @isactive='-1' then 'Y' else is_active end = case when @isactive='-1' then 'Y' else @isactive end
+
 		return;
 	End
 
