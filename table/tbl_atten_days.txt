@@ -1,0 +1,28 @@
+USE [EasySchoolNew]
+GO
+
+/****** Object:  Table [dbo].[tbl_atten_days]    Script Date: 1/12/2024 11:09:04 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[tbl_atten_days](
+	[ID] [int] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
+	[sch_id] [nvarchar](50) NULL,
+	[class_id] [int] NULL,
+	[section_id] [int] NULL,
+	[term_id] [int] NULL,
+	[user_id] [int] NULL,
+	[present_days] [int] NULL,
+	[created_by] [int] NULL,
+	[updated_by] [int] NULL,
+	[created_date] [nvarchar](50) NULL,
+	[updated_date] [nvarchar](50) NULL,
+	[is_del] [nchar](1) NULL
+) ON [PRIMARY]
+
+GO
+
+

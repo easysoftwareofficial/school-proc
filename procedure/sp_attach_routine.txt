@@ -1,6 +1,6 @@
-USE [EasySchoolNew]
+USE [cosmicinternationalDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_attach_routine]    Script Date: 9/26/2023 12:30:46 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_attach_routine]    Script Date: 1/1/2024 3:48:43 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -40,8 +40,8 @@ BEGIN
 
 	if(@routtype='B')
 	BEGIN	
-	select exam_name Title,'Exam' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine r
-	left join tbl_term t on  t.term_id=r.term_id and t.sch_id=r.sch_id
+	select examTerminal Title,'Exam' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine r
+	left join msheetTerminal t on t.id=r.term_id
 	where r.class_id=@classid  and r.rout_type='E' and r.sch_id=@schid and r.is_del='N'
 	UNION
 	select 'Class Routine' Title,'Class' Type,@imgurl+'document/'+attach Attachment from tbl_attach_routine where 

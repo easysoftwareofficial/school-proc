@@ -1,0 +1,101 @@
+USE [EasySchoolNew]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 1/12/2024 11:18:04 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER proc [dbo].[sp_admin_atten_marks](
+	@schid nvarchar(50) = null,
+	@userid int = null,
+	@flag nvarchar(10) = null,
+	@authcode nvarchar(250) = null,
+	@classid int= null,
+	@sectionid int =  null,
+	@termid int = null,	
+	@param xml = null
+)AS
+BEGIN
+	If not exists(Select 'm' from tbl_school where sch_id=@schid and del_flag='N')
+	Begin
+		Select 201 StatusCode, 'School does not exists' Message
+		return;
+	End	
+
+
+	If(@flag='I')
+	Begin
+		
+		declare @temp_tbl TABLE(ID int identity(1,1),mem_id int ,present_days nvarchar(5))
+		declare @i int,@count int
+		set @i=1
+		set @count = 
+		(SELECT count(1) FROM @param.nodes('ArrayOfPresentLst/PresentLst') Node(Data));
+
+		Insert into @temp_tbl(mem_id,present_days)
+		(Select mem_id=Node.Data.value('(MemID)[1]','INT'),
+		present_days=Node.Data.value('(PresentDays)[1]','INT')
+		from @param.nodes('ArrayOfPresentLst/PresentLst') Node(Data))
+
+
+		while(@count!=0)
+		begin
+			
+			declare @memid int, @present int, @probtain nvarchar(5)
+			set @memid = (Select mem_id from @temp_tbl where ID=@i)
+			set @present = (Select present_days from @temp_tbl where ID=@i)
+
+
+			If exists(Select 'm' from tbl_atten_days where user_id=@memid and term_id=@termid and sch_id=@schid)
+			Begin
+				Update tbl_atten_days set present_days=@present, updated_by=@userid,
+				updated_date=GETDATE()
+				where user_id=@memid and sch_id=@schid and term_id=@termid;
+			End
+			else
+			Begin
+		
+				Insert into tbl_atten_days(sch_id,class_id,section_id,term_id,user_id,present_days,created_date,updated_date,
+				created_by,updated_by,is_del) values
+				(@schid,@classid,@sectionid,@termid,@memid,@present,GETDATE(),GETDATE(),@userid,@userid,'N')
+			End
+
+			set @count=@count-1
+			set @i = @i+1
+		end
+		Select 200 StatusCode, 'Success' Message
+		return;
+	End
+
+	--select * from tbl_marks_input;
+
+	If(@flag='S')
+	Begin
+	
+	  if exists(select 'M' from tbl_atten_days where sch_id=@schid and class_id=@classid and section_id=@sectionid and term_id=@termid)
+	  BEGIN
+
+		Select u.roll_no RollNo, u.full_name FullName,u.user_id MemID, isnull(a.present_days,'') PresentDays
+		from tbl_user u
+		left join tbl_atten_days a on u.user_id=a.user_id and a.sch_id=u.sch_id and a.is_del='N' and a.term_id=@termid	
+		where u.sch_id=@schid 
+		and u.class_id=@classid and u.section_id=@sectionid 
+		and u.del_flag='N' and u.user_type='S' order by CAST(u.roll_no as BIGINT);;
+		END
+		ELSE
+		BEGIN
+  
+	    Select u.roll_no RollNo, u.full_name FullName,u.user_id MemID, '0' PresentDays
+		from tbl_user u		
+		where u.sch_id=@schid 
+		and u.class_id=@classid and u.section_id=@sectionid 
+		and u.del_flag='N' and u.user_type='S' order by CAST(u.roll_no as BIGINT);
+		
+		
+		return;
+		END
+
+
+		return;
+	End
+END
