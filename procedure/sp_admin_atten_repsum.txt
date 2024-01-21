@@ -1,6 +1,6 @@
-USE [gandakischoolDB]
+USE [gajurmukhiDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_atten_repsum]    Script Date: 9/10/2023 3:09:32 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_repsum]    Script Date: 1/19/2024 1:22:10 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -54,6 +54,33 @@ BEGIN
 	
 	return;
 	End
+
+	if(@dflag='S')
+	BEGIN
+	-- Roll No | Full Name | Total Present | Total Absent | Working Days
+	if(@dtflag='F')
+	BEGIN
+	
+	select u.id UserID,u.firstName+' '+u.lastName FullName,
+	(select count(attend_status) from tbl_attendance tp where attend_status='P' and tp.class_id=u.classID and tp.section_id=u.sectionID and tp.user_id=u.id and tp.is_del='N' and nepali_date<=@dateto and nepali_date>=@datefrom and subject_id='0') CtPresent ,
+	(select count(attend_status) from tbl_attendance ta where attend_status='A' and ta.class_id=u.classID and ta.section_id=u.sectionID and ta.user_id=u.id and ta.is_del='N' and nepali_date<=@dateto and nepali_date>=@datefrom and subject_id='0') CtAbsent 
+	from stNamelist u where u.classID=@classid and u.sectionID=@sectionid;
+	
+	return
+	END
+
+	if(@dtflag='M')
+	BEGIN
+
+	select u.id UserID,u.firstName+' '+u.lastName FullName,
+	(select count(attend_status) from tbl_attendance tp where attend_status='P' and tp.class_id=u.classID and tp.section_id=u.sectionID and tp.user_id=u.id and tp.is_del='N' and SUBSTRING(nepali_date,1,7)=@values and subject_id='0') CtPresent ,
+	(select count(attend_status) from tbl_attendance ta where attend_status='A' and ta.class_id=u.classID and ta.section_id=u.sectionID and ta.user_id=u.id and ta.is_del='N' and SUBSTRING(nepali_date,1,7)=@values and subject_id='0') CtAbsent 
+	from stNamelist u where u.classID=@classid and u.sectionID=@sectionid;
+	return
+	END
+	
+	return;
+	End
+
 	END
 END
-

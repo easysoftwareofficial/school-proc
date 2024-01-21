@@ -1,10 +1,11 @@
-USE [EasySchoolNew]
+USE [gajurmukhiDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 1/12/2024 11:18:04 AM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 1/21/2024 12:26:39 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 ALTER proc [dbo].[sp_admin_atten_marks](
 	@schid nvarchar(50) = null,
 	@userid int = null,
@@ -16,12 +17,7 @@ ALTER proc [dbo].[sp_admin_atten_marks](
 	@param xml = null
 )AS
 BEGIN
-	If not exists(Select 'm' from tbl_school where sch_id=@schid and del_flag='N')
-	Begin
-		Select 201 StatusCode, 'School does not exists' Message
-		return;
-	End	
-
+	
 
 	If(@flag='I')
 	Begin
@@ -46,16 +42,16 @@ BEGIN
 			set @present = (Select present_days from @temp_tbl where ID=@i)
 
 
-			If exists(Select 'm' from tbl_atten_days where user_id=@memid and term_id=@termid and sch_id=@schid)
+			If exists(Select 'm' from EasySchoolNew.dbo.tbl_atten_days where user_id=@memid and term_id=@termid and sch_id=@schid)
 			Begin
-				Update tbl_atten_days set present_days=@present, updated_by=@userid,
+				Update EasySchoolNew.dbo.tbl_atten_days set present_days=@present, updated_by=@userid,
 				updated_date=GETDATE()
 				where user_id=@memid and sch_id=@schid and term_id=@termid;
 			End
 			else
 			Begin
 		
-				Insert into tbl_atten_days(sch_id,class_id,section_id,term_id,user_id,present_days,created_date,updated_date,
+				Insert into EasySchoolNew.dbo.tbl_atten_days(sch_id,class_id,section_id,term_id,user_id,present_days,created_date,updated_date,
 				created_by,updated_by,is_del) values
 				(@schid,@classid,@sectionid,@termid,@memid,@present,GETDATE(),GETDATE(),@userid,@userid,'N')
 			End
@@ -72,24 +68,24 @@ BEGIN
 	If(@flag='S')
 	Begin
 	
-	  if exists(select 'M' from tbl_atten_days where sch_id=@schid and class_id=@classid and section_id=@sectionid and term_id=@termid)
+	  if exists(select 'M' from EasySchoolNew.dbo.tbl_atten_days where sch_id=@schid and class_id=@classid and section_id=@sectionid and term_id=@termid)
 	  BEGIN
 
-		Select u.roll_no RollNo, u.full_name FullName,u.user_id MemID, isnull(a.present_days,'') PresentDays
-		from tbl_user u
-		left join tbl_atten_days a on u.user_id=a.user_id and a.sch_id=u.sch_id and a.is_del='N' and a.term_id=@termid	
-		where u.sch_id=@schid 
-		and u.class_id=@classid and u.section_id=@sectionid 
-		and u.del_flag='N' and u.user_type='S' order by CAST(u.roll_no as BIGINT);;
+		Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, isnull(a.present_days,'') PresentDays
+		from stnamelist u
+		left join EasySchoolNew.dbo.tbl_atten_days a on u.id=a.user_id and a.is_del='N' and a.term_id=@termid	
+		where
+		 u.classID=@classid and u.sectionID=@sectionid 
+		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);;
 		END
 		ELSE
 		BEGIN
   
-	    Select u.roll_no RollNo, u.full_name FullName,u.user_id MemID, '0' PresentDays
-		from tbl_user u		
-		where u.sch_id=@schid 
-		and u.class_id=@classid and u.section_id=@sectionid 
-		and u.del_flag='N' and u.user_type='S' order by CAST(u.roll_no as BIGINT);
+	    Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
+		from stnamelist u		
+		where 
+		 u.classID=@classid and u.sectionID=@sectionid 
+		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);;
 		
 		
 		return;
