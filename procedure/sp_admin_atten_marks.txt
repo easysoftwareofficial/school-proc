@@ -59,7 +59,11 @@ BEGIN
 			set @count=@count-1
 			set @i = @i+1
 		end
-		Select 200 StatusCode, 'Success' Message
+		    Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
+		from stnamelist u		
+		where 
+		 u.classID=@classid and u.sectionID=@sectionid 
+		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);
 		return;
 	End
 
@@ -85,7 +89,7 @@ BEGIN
 		from stnamelist u		
 		where 
 		 u.classID=@classid and u.sectionID=@sectionid 
-		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);;
+		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);
 		
 		
 		return;
