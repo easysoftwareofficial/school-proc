@@ -1,11 +1,10 @@
-USE [gajurmukhiDB]
+USE [gorkhaenglishDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 1/21/2024 12:26:39 PM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 2/21/2024 11:20:22 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 ALTER proc [dbo].[sp_admin_atten_marks](
 	@schid nvarchar(50) = null,
 	@userid int = null,
@@ -59,7 +58,7 @@ BEGIN
 			set @count=@count-1
 			set @i = @i+1
 		end
-		    Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
+		    Select CAST(u.rNo as nvarchar) RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
 		from stnamelist u		
 		where 
 		 u.classID=@classid and u.sectionID=@sectionid 
@@ -75,7 +74,7 @@ BEGIN
 	  if exists(select 'M' from EasySchoolNew.dbo.tbl_atten_days where sch_id=@schid and class_id=@classid and section_id=@sectionid and term_id=@termid)
 	  BEGIN
 
-		Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, isnull(a.present_days,'') PresentDays
+		Select CAST(u.rNo as nvarchar) RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, isnull(a.present_days,'') PresentDays
 		from stnamelist u
 		left join EasySchoolNew.dbo.tbl_atten_days a on u.id=a.user_id and a.is_del='N' and a.term_id=@termid	
 		where
@@ -85,7 +84,7 @@ BEGIN
 		ELSE
 		BEGIN
   
-	    Select u.rNo RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
+	    Select CAST(u.rNo as nvarchar) RollNo, u.firstName+' '+u.lastName FullName,u.id MemID, '0' PresentDays
 		from stnamelist u		
 		where 
 		 u.classID=@classid and u.sectionID=@sectionid 
