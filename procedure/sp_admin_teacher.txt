@@ -1,6 +1,6 @@
-USE [gokarneshworlightDB]
+USE [cosmicinternationalDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_teacher]    Script Date: 6/21/2023 9:58:49 AM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_teacher]    Script Date: 2/22/2024 1:34:18 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -42,4 +42,15 @@ BEGIN
 		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Teacher'
 		return;
 	End
+
+	If(@flag='SS')
+	Begin	
+	select  u.id TeacherID,@schid SchID,appUser StaffUsername,
+		case when (firstName+' '+lastName)='' then '' else (firstName+' '+lastName) end as StaffName,    	
+		@imgurl+'photo/user/'+u.image Image,gender Gender,
+		left(fatherMobile,10) Phone,u.fatherTemp Address from stNamelist u, acLink b where  
+		academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and u.appType = 'Non'
+		return;
+	End
+
 END
