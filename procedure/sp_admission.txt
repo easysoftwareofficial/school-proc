@@ -1,0 +1,152 @@
+
+ALTER procedure [dbo].[sp_admission](
+@schid nvarchar(50)=null,
+@flag nvarchar(5)=null,
+@userid int=null,
+@admissionid int=null,
+@firstname nvarchar(150)=null,
+@lastname nvarchar(150)=null,
+@image nvarchar(250)=null,
+@imgurl nvarchar(250)=null,
+@fathername nvarchar(250)=null,
+@fathermobile nvarchar(50)=null,
+@fatherphone nvarchar(50)=null,
+@mothername nvarchar(250)=null,
+@mothermobile varchar(50)=null,
+@motherphone varchar(50)=null,
+@tempaddress varchar(250)=null,
+@permaddress varchar(250)=null,
+@usermobile varchar(50)=null,
+@dateofbirth varchar(50)=null,
+@gender varchar(5)=null,
+@class int=null,
+@section int=null,
+@emergfullname nvarchar(250)=null,
+@emergmobile nvarchar(50)=null,
+@emergrelation nvarchar(50)=null,
+@email nvarchar(150)=null,
+@dalitorjanati nvarchar(5)=null,
+@nationality nvarchar(50)=null,
+@bloodgroup nvarchar(50)=null,
+@religion nvarchar(50)=null,
+@previousschool nvarchar(250)=null,
+@hobbies nvarchar(150)=null,
+@remarks nvarchar(250)=null
+)
+AS
+BEGIN
+
+if(@flag='i')
+BEGIN
+insert into EasySchoolNew.dbo.tbl_admission(image_url,temp_address,perm_address,sch_id,class_id,section_id,user_id,first_name,last_name,father_name,father_phone,father_mobile,mother_name,mother_phone,mother_mobile,user_mobile,date_of_birth,gender,emerg_full_name,emerg_mobile,emerg_relation,email,dalitorjanjati,nationality,blood_group,religion,previous_school,hobbies,remarks,created_date,updated_date,updated_by,is_del) 
+values (@image,@tempaddress,@permaddress,@schid,@class,@section,@userid,@firstname,@lastname,@fathername,@fatherphone,@fathermobile,@mothername,@motherphone,@mothermobile,@usermobile,@dateofbirth,@gender,@emergfullname,@emergmobile,@emergrelation,@email,@dalitorjanati,@nationality,@bloodgroup,@religion,@previousschool,@hobbies,@remarks,FORMAT(GETDATE(),'yyyy-MM-dd'),FORMAT(GETDATE(),'yyyy-MM-dd'),@userid,'N');
+select 200 StatusCode,'Success' Message;
+return;
+END
+
+if(@flag='U')
+BEGIN
+if not exists(select 'M' from EasySchoolNew.dbo.tbl_admission where ID=@admissionid and is_del='N')
+BEGIN
+select 201 StatusCode,'Admission does not exists.' Message;
+return;
+END;
+update  EasySchoolNew.dbo.tbl_admission set temp_address=@tempaddress,perm_address=@permaddress,class_id=@class,section_id=@section,first_name=@firstname,last_name=@lastname,father_name=@fathername,father_phone=@fatherphone,father_mobile=@fathermobile,mother_name=@mothername,mother_phone=@mothermobile,mother_mobile=@mothermobile,user_mobile=@usermobile,date_of_birth=@dateofbirth,gender=@gender,emerg_full_name=@emergfullname,emerg_mobile=@emergmobile,emerg_relation=@emergrelation,email=@email,dalitorjanjati=@dalitorjanati,nationality=@nationality,blood_group=@bloodgroup,religion=@religion,previous_school=@previousschool,hobbies=@hobbies,remarks=@remarks,updated_date=FORMAT(GETDATE(),'yyyy-MM-dd'),updated_by=@userid 
+where ID=@admissionid and is_del='N';
+
+
+if(@image!='')
+BEGIN
+update  EasySchoolNew.dbo.tbl_admission set image_url=@image,updated_date=FORMAT(GETDATE(),'yyyy-MM-dd'),updated_by=@userid 
+where ID=@admissionid and is_del='N';
+END;
+
+select 200 StatusCode,'Success' Message;
+return;
+END
+
+if(@flag='S')
+BEGIN
+select a.ID AdmissionID,
+@imgurl+a.sch_id+'/admission/'+a.image_url Image,
+clName Class,secName Section,(first_name+' '+last_name) FullName,temp_address TempAddress,perm_address PermAddress,user_mobile UserMobile,date_of_birth DateOfBirth,gender Gender,email Email,nationality Nationality,a.created_date CreatedDate from EasySchoolNew.dbo.tbl_admission a
+left join stclass c on c.id=a.class_id 
+left join stsection s on s.id=a.section_id 
+where a.is_del='N' and a.sch_id=@schid
+return;
+END
+
+if(@flag='SI')
+BEGIN
+if not exists(select 'M' from EasySchoolNew.dbo.tbl_admission where ID=@admissionid and is_del='N')
+BEGIN
+select 201 StatusCode,'Admission does not exists.' Message;
+return;
+END;
+select @imgurl+a.sch_id+'/admission/'+a.image_url Image,a.class_id ClassID,c.clname Class,a.section_id SectionID,s.secName Section,first_name FirstName,last_name LastName,father_name FatherName,father_phone FatherPhone,
+father_mobile FatherMobile,mother_name MotherName,mother_phone MotherPhone,temp_address TempAddress,perm_address PermAddress,mother_mobile MotherMobile,user_mobile UserMobile,date_of_birth DateOfBirth,gender Gender,emerg_full_name EmergFullName,emerg_mobile EmergMobile,emerg_relation EmergRelation,email Email,dalitorjanjati DalitOrJanjati,nationality Nationality,blood_group BloodGroup,religion Religion,previous_school PreviousSchool,hobbies Hobbies,remarks Remarks,a.created_date CreatedDate
+from EasySchoolNew.dbo.tbl_admission a
+left join stclass c on c.id=a.class_id 
+left join stsection s on s.id=a.section_id 
+where is_del='N' and a.ID=@admissionid;
+return;
+END
+
+
+
+if(@flag='R')
+BEGIN
+if not exists(select 'M' from EasySchoolNew.dbo.tbl_admission where ID=@admissionid and is_del='N')
+BEGIN
+select 201 StatusCode,'Admission does not exists.' Message;
+return;
+END;
+
+update EasySchoolNew.dbo.tbl_admission set is_del='Y',updated_date=FORMAT(GETDATE(),'yyyy-MM-dd'),updated_by=@userid 
+where ID=@admissionid and is_del='N';
+select 200 StatusCode,'Success' Message;
+return;
+END
+
+if(@flag='SC')
+BEGIN
+ 	select id ID,case when clName='' then '-' else clName end as Name		
+		 from stClass c where 
+		clName!='...' and academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+ return;
+END
+
+if(@flag='SS')
+BEGIN
+ select distinct sectionID ID,case when secName='' then '-' else secName end as Name
+		from stSection b,stNamelist a
+		--inner join stClass c on c.id=a.classID and c.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')   
+		where a.sectionID=b.id and b.secName!='' and b.academicYear=(select top 1 academicYear from stAcademicYear where defaultYear='Yes')
+		and a.classID=@class;
+ return;
+END
+
+
+if(@flag='SD')
+BEGIN
+ select sch_id SchID,sch_name SchName,sch_address SchAddress, sch_tel SchTel, @imgurl+'/'+sch_id+'/photo/banner/'+sch_id+'.png' SchLogo,
+			sch_contact_person SchContactPerson, auth_token AuthToken, about_us AboutUs, msg Msg, loc_lat LocLat,'2023-04-25' SchExpiry,
+			loc_long LocLong, '' SchPhoto, sch_website SchWebsite, sch_fb SchFb,'N' IsMobileAtten,
+			sch_twitter SchTwitter, sch_yt SchYt,color_code ScColor
+			 from EasySchoolNew.dbo.tbl_school where sch_id=@schid;
+ return;
+END
+
+
+
+if(@flag='SDS')
+BEGIN
+ select sch_id SchID,sch_name SchName,sch_address SchAddress, sch_tel SchTel,@imgurl+sch_id+'/photo/banner/'+sch_id+'.png' SchLogo,
+			sch_contact_person SchContactPerson, auth_token AuthToken, about_us AboutUs, msg Msg, loc_lat LocLat,'2023-04-25' SchExpiry,
+			loc_long LocLong,'' SchPhoto, sch_website SchWebsite, sch_fb SchFb,'N' IsMobileAtten,
+			sch_twitter SchTwitter, sch_yt SchYt,color_code ScColor
+			 from EasySchoolNew.dbo.tbl_school where slug=@remarks;
+ return;
+END
+
+END
