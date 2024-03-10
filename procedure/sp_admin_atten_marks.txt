@@ -1,6 +1,6 @@
-USE [gorkhaenglishDB]
+USE [kitinisecondayDB]
 GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 2/21/2024 11:20:22 AM ******/
+/****** Object:  StoredProcedure [dbo].[sp_admin_atten_marks]    Script Date: 3/10/2024 1:23:22 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -79,7 +79,7 @@ BEGIN
 		left join EasySchoolNew.dbo.tbl_atten_days a on u.id=a.user_id and a.is_del='N' and a.term_id=@termid	
 		where
 		 u.classID=@classid and u.sectionID=@sectionid 
-		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);;
+		and  u.apptype='Student' order by CAST(u.rNo as BIGINT);;
 		END
 		ELSE
 		BEGIN
@@ -88,7 +88,7 @@ BEGIN
 		from stnamelist u		
 		where 
 		 u.classID=@classid and u.sectionID=@sectionid 
-		and u.del_flag='N' and u.apptype='Student' order by CAST(u.rNo as BIGINT);
+		 and u.apptype='Student' order by CAST(u.rNo as BIGINT);
 		
 		
 		return;
