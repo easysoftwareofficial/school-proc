@@ -1,0 +1,104 @@
+USE [basundharaacademyDB]
+GO
+/****** Object:  StoredProcedure [dbo].[sp_app_usuage]    Script Date: 3/11/2024 2:03:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER procedure [dbo].[sp_app_usuage]
+( 
+ @authcode nvarchar(50) = null,
+ @schid nvarchar(50) = null,
+ @classid int = null,
+  @sectionid int = null,
+ @flag nvarchar(5) = null,
+  @dflag nvarchar(5) = null
+  )
+AS
+BEGIN
+if(@flag='R')
+BEGIN
+ 
+ if(@dflag='T')
+ BEGIN
+   select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist 
+  where format(CAST(lastLogginedDate as datetime2),'yyyy-MM-dd')=format(CAST(GETDATE() as date),'yyyy-MM-dd')
+ return;
+ END
+
+  if(@dflag='TU')
+ BEGIN
+   select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist  where 
+  appType='Teacher';
+ return;
+ END
+
+ if(@dflag='SU')
+ BEGIN
+ select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist  where 
+   classID=@classid and sectionID=@sectionid and apptype='Student';
+ return;
+ END
+
+ if(@dflag='AU')
+ BEGIN
+   select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist  where 
+    appType='Admin';
+ return;
+ END
+
+ if(@dflag='STU')
+ BEGIN
+ select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist  where 
+   apptype='Non';
+ return;
+ END
+
+ if(@dflag='NL')
+ BEGIN
+ select appUser UserName,
+  apptype UserType, 
+  (firstName+' '+lastName) FullName,ISNULL(lastLogginedDate,'Not Loggined') LastLoginedDate  from   
+  stnamelist where lastLogginedDate is null
+ return;
+ END
+
+END
+
+
+if(@flag='S')
+BEGIN
+  if(@flag='S')
+  BEGIN
+ select
+
+  (select count(*) from stNamelist where apptype='Student') TotalStudent,  
+  (select count(*) from stNamelist where apptype='Student' and lastLogginedDate is not null) CtStudent,
+  (select count(*) from stNamelist where  apptype='Admin') TotalAdmin,  
+  (select count(*) from stNamelist where apptype='Admin' and lastLogginedDate is not null) CtAdmin,
+   (select count(*) from stNamelist where apptype='Teacher') TotalTeacher,  
+  (select count(*) from stNamelist where apptype='Teacher' and lastLogginedDate is not null) CtTeacher,
+   (select count(*) from stNamelist where  apptype='Non') TotalStaff,  
+  (select count(*) from stNamelist where apptype='Non' and lastLogginedDate is not null) CtStaff
+
+   return;
+  END
+END
+End
+

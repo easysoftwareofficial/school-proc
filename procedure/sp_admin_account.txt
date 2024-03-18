@@ -1,10 +1,4 @@
-USE [cosmicinternationalDB]
-GO
-/****** Object:  StoredProcedure [dbo].[sp_admin_account]    Script Date: 2/25/2024 3:54:15 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
 ALTER proc [dbo].[sp_admin_account](
 	@schid nvarchar(50) = null,
 	@userid int = null,
@@ -148,7 +142,7 @@ Begin
 		@temppp		
 		EXEC(@selectQuery2);
 
-		Select a.AccID AccID,(firstName+' '+lastName) FullName,Date NepaliDate,particulars Particulars,credit Credit
+		Select CAST(a.AccID as int) AccID,(firstName+' '+lastName) FullName,Date NepaliDate,particulars Particulars,CAST(credit as nvarchar) Credit
 		from @temppp a,stNamelist u
 		where a.AccID=u.id and u.academicYearID=(select top 1 id from stAcademicYear where defaultYear='Yes') and  (u.firstName+' '+u.lastName) is not null and
 		--case when @userid = '-1' then '1' else a.created_by end = case when @userid='-1' then '1' else @userid end and
